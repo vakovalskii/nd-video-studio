@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music Studio</title>
+<style>
+  :root {
+    --bg: #0b0d12; --panel: #131722; --panel2: #1a1f2d; --line: #262c3d;
+    --text: #e8ebf3; --dim: #8a92a8; --accent: #7c5cff; --accent2: #2ee6c8;
+    --warn: #ffb547; --bad: #ff5c7a; --ok: #3ddc97;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f4f5f9; --panel: #fff; --panel2: #f0f1f6; --line: #dde0ea;
+            --text: #161a24; --dim: #626a80; --accent: #5b3df5; --accent2: #0aa892; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+  header .sub { color: var(--dim); font-size: 13px; }
+  #health { margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 99px; background: var(--panel2); color: var(--dim); }
+  #health.ok { color: var(--ok); } #health.bad { color: var(--bad); }
+  main { display: grid; grid-template-columns: minmax(340px, 440px) 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin: 0 0 12px; font-weight: 600; }
+  label { display: block; font-size: 12px; color: var(--dim); margin: 12px 0 5px; }
+  textarea, input, select { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+         border-radius: 9px; padding: 9px 11px; font: inherit; outline: none; }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 84px; }
+  #lyrics { min-height: 64px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { border: 1px solid var(--line); background: transparent; color: var(--dim); border-radius: 99px;
+          padding: 4px 10px; font-size: 12px; cursor: pointer; }
+  .chip:hover { color: var(--text); border-color: var(--accent); }
+  .presets .chip { color: var(--text); background: var(--panel2); }
+  .range { display: flex; align-items: center; gap: 10px; }
+  .range input { padding: 0; accent-color: var(--accent); }
+  .range output { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  .toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--text); font-size: 13px; cursor: pointer; }
+  .toggle input { width: auto; accent-color: var(--accent); }
+  .hint { color: var(--dim); font-size: 12px; margin-top: 4px; }
+  .idea { background: var(--panel2); border: 1px dashed var(--line); border-radius: 11px; padding: 2px 12px 12px; margin-top: 12px; }
+  .ideaRow { display: flex; gap: 8px; }
+  .ideaRow select { width: 64px; flex: none; }
+  .btn2 { flex: none; border: 0; border-radius: 9px; padding: 0 14px; font: 600 13px/1 inherit; cursor: pointer;
+          background: var(--accent); color: #fff; }
+  .btn2:disabled { opacity: 0.5; cursor: wait; }
+  #warn { color: var(--warn); font-size: 12px; margin-top: 6px; min-height: 1em; }
+  button.go { width: 100%; margin-top: 18px; padding: 13px; border: 0; border-radius: 11px; font: 600 15px/1 inherit;
+              background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #fff; cursor: pointer; }
+  button.go:disabled { opacity: 0.5; cursor: wait; }
+  details { margin-top: 12px; } summary { cursor: pointer; color: var(--dim); font-size: 12px; }
+  .jobs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .job { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--panel2); font-size: 13px; }
+  .job .p { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spin { width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent2); border-radius: 50%; animation: s 0.8s linear infinite; }
+  @keyframes s { to { transform: rotate(360deg); } }
+  .job.error { color: var(--bad); }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar input { max-width: 260px; }
+  .tracks { display: flex; flex-direction: column; gap: 10px; }
+  .track { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .track .top { display: flex; gap: 10px; align-items: baseline; }
+  .track .title { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track .meta { color: var(--dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .track audio { width: 100%; margin: 8px 0 6px; height: 36px; }
+  .track .acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .btn { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 8px; padding: 5px 10px;
+         font-size: 12px; cursor: pointer; text-decoration: none; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.fav { color: var(--warn); }
+  .track select { width: auto; padding: 4px 8px; font-size: 12px; }
+  .empty { color: var(--dim); text-align: center; padding: 40px 0; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line);
+           padding: 10px 16px; border-radius: 10px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  #toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎛 Music Studio</h1>
+  <span class="sub">ACE-Step 1.5 · свой GPU</span>
+  <span id="health">проверяю…</span>
+</header>
+<main>
+  <section class="card">
+    <h2>Трек</h2>
+    <div class="chips presets" id="presets"></div>
+
+    <div class="idea">
+      <label for="idea">✍️ Песня из идеи · <span class="hint">модель хаба напишет текст и подберёт жанр</span></label>
+      <div class="ideaRow">
+        <input id="idea" placeholder="например: песня про жизнь, светлая грусть, акустика">
+        <select id="ideaLang" title="язык текста"><option value="ru">ru</option><option value="en">en</option><option value="es">es</option><option value="de">de</option><option value="fr">fr</option></select>
+        <button class="btn2" id="write">Написать</button>
+      </div>
+    </div>
+
+    <label for="prompt">Описание (жанр, инструменты, настроение, по-английски лучше)</label>
+    <textarea id="prompt">Instrumental minimal electronic, pulsing analog synth arpeggio, soft sub bass, airy pads, cool focused mood, no vocals</textarea>
+    <div class="chips" id="tags"></div>
+
+    <label for="lyrics">Текст песни · <span class="hint">[Instrumental] = без голоса; куплеты [Verse], [Chorus]</span></label>
+    <textarea id="lyrics">[Instrumental]</textarea>
+    <div id="warn"></div>
+
+    <label>Длительность</label>
+    <div class="range"><input type="range" id="duration" min="10" max="240" step="5" value="60"><output id="durationOut">60 с</output></div>
+
+    <div class="row3">
+      <div><label for="bpm">BPM</label><input id="bpm" type="number" min="40" max="220" placeholder="авто"></div>
+      <div><label for="key">Тональность</label><select id="key"></select></div>
+      <div><label for="batch">Вариантов</label><select id="batch"><option>1</option><option selected>2</option></select></div>
+    </div>
+
+    <label class="toggle"><input type="checkbox" id="thinking"> LM продумывает трек (качество выше, дольше)</label>
+
+    <details>
+      <summary>Тонкая настройка</summary>
+      <div class="row">
+        <div><label for="steps">Шаги (turbo: 8)</label><input id="steps" type="number" min="1" max="100" value="8"></div>
+        <div><label for="guidance">Guidance</label><input id="guidance" type="number" step="0.5" min="1" max="15" value="7"></div>
+      </div>
+      <div class="row">
+        <div><label for="seed">Seed (пусто = случайный)</label><input id="seed" type="number" placeholder="случайный"></div>
+        <div><label for="vlang">Язык вокала</label>
+          <select id="vlang"><option value="en">en</option><option value="ru">ru</option><option value="zh">zh</option><option value="ja">ja</option><option value="es">es</option><option value="de">de</option><option value="fr">fr</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="timesig">Размер</label><select id="timesig"><option value="">авто</option><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select></div>
+      </div>
+    </details>
+
+    <button class="go" id="go">Сгенерировать ⌘↵</button>
+    <div class="hint" id="goHint">30 с трека ≈ 20–40 с генерации, первый запуск дольше (грузятся модели).</div>
+  </section>
+
+  <section>
+    <div class="jobs" id="jobs"></div>
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Треки</h2>
+        <input id="q" placeholder="поиск по описанию">
+        <label class="toggle" style="margin:0"><input type="checkbox" id="onlyFav"> ★ только избранные</label>
+      </div>
+      <div class="tracks" id="tracks"></div>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const PRESETS = {
+  "Минимал-электроника": ["Instrumental minimal electronic, pulsing analog synth arpeggio, soft sub bass, airy pads, cool focused mood, no vocals", 110],
+  "Трейлер": ["Epic cinematic trailer, huge taiko drums, braams, rising strings, dark tension build, massive hits, no vocals", 90],
+  "Lo-fi": ["Lo-fi hip hop, dusty vinyl crackle, mellow Rhodes chords, laid-back boom bap drums, warm bass, chill study vibe, no vocals", 80],
+  "Синтвейв": ["Synthwave, retro 80s analog synths, gated reverb drums, driving bassline, neon night drive, nostalgic, no vocals", 105],
+  "Эмбиент": ["Ambient, evolving warm pads, soft granular textures, gentle piano notes, spacious reverb, calm and hopeful, no vocals", 70],
+  "Тех-хаус": ["Tech house, punchy four-on-the-floor kick, rolling bassline, crisp hi-hats, groovy percussion, minimal vocal chops", 124],
+  "Оркестр": ["Orchestral score, sweeping strings, french horns, delicate woodwinds, triumphant and emotional, cinematic, no vocals", 96],
+  "Корпоратив": ["Upbeat corporate tech, bright plucks, clean acoustic guitar, light claps, optimistic and modern, no vocals", 118],
+  "Поп с вокалом": ["Modern pop, catchy female vocals, bright synths, punchy drums, uplifting chorus", 115, "[Verse]\nCity lights are calling out my name\n[Chorus]\nWe run, we shine, we never stay the same"],
+};
+const TAGS = ["no vocals", "female vocals", "male vocals", "dark", "uplifting", "energetic", "calm", "cinematic",
+  "808 bass", "analog synth", "piano", "acoustic guitar", "strings", "choir", "glitch", "vinyl crackle", "big drop", "slow build"];
+const KEYS = ["", ...["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"].flatMap(k => [`${k} major`, `${k} minor`])];
+
+let projects = [], hist = [];
+
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); setTimeout(() => el.classList.remove("on"), 2400); }
+async function j(url, body) {
+  const r = await fetch(url, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+  return d;
+}
+
+function setup() {
+  for (const [name, [p, bpm, lyr]] of Object.entries(PRESETS)) {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = name;
+    b.onclick = () => { $("prompt").value = p; $("bpm").value = bpm || ""; $("lyrics").value = lyr || "[Instrumental]"; };
+    $("presets").appendChild(b);
+  }
+  for (const t of TAGS) {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = "+ " + t;
+    b.onclick = () => { const v = $("prompt").value.trim(); if (!v.toLowerCase().includes(t)) $("prompt").value = v ? `${v}, ${t}` : t; };
+    $("tags").appendChild(b);
+  }
+  for (const k of KEYS) { const o = document.createElement("option"); o.value = k; o.textContent = k || "авто"; $("key").appendChild(o); }
+  $("duration").oninput = () => $("durationOut").textContent = `${$("duration").value} с`;
+  $("go").onclick = generate;
+  $("write").onclick = writeSong;
+  $("idea").addEventListener("keydown", e => { if (e.key === "Enter") writeSong(); });
+  for (const id of ["prompt", "lyrics", "vlang"]) $(id).addEventListener("input", checkConflicts);
+  document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") generate(); });
+  $("q").oninput = renderTracks; $("onlyFav").onchange = renderTracks;
+}
+
+const INSTR = /(^|,\s*)(instrumental|no vocals)(\s*,|$)/gi;
+const hasLyrics = () => { const l = $("lyrics").value.trim(); return l && !/^\[instrumental\]$/i.test(l); };
+function lyricLang(t) {
+  if (/[а-яё]/i.test(t)) return "ru";
+  if (/[\u4e00-\u9fff]/.test(t)) return "zh";
+  if (/[\u3040-\u30ff]/.test(t)) return "ja";
+  return null;
+}
+// текст есть, а описание просит инструментал, или язык вокала не тот: подсказываем, при старте чиним сами
+function checkConflicts() {
+  const w = [];
+  if (hasLyrics()) {
+    if (INSTR.test($("prompt").value)) w.push("в описании «instrumental / no vocals», а текст есть: уберу при генерации");
+    INSTR.lastIndex = 0;
+    const lang = lyricLang($("lyrics").value);
+    if (lang && lang !== $("vlang").value) w.push(`текст на «${lang}», а язык вокала «${$("vlang").value}»: переключу`);
+    if ($("lyrics").value.trim().split(/\s+/).length < 8 && !/\[/.test($("lyrics").value))
+      w.push("это похоже на просьбу, а не на стихи: жми «Написать» в блоке идеи");
+  }
+  $("warn").textContent = w.join(" · ");
+}
+function fixConflicts() {
+  if (!hasLyrics()) return;
+  $("prompt").value = $("prompt").value.replace(INSTR, "$1").replace(/,\s*,/g, ",").replace(/^\s*,\s*|\s*,\s*$/g, "").trim();
+  INSTR.lastIndex = 0;
+  const lang = lyricLang($("lyrics").value);
+  if (lang) $("vlang").value = lang;
+  checkConflicts();
+}
+
+async function writeSong() {
+  const idea = $("idea").value.trim();
+  if (!idea) return toast("Напиши идею песни");
+  $("write").disabled = true; $("write").textContent = "Пишу…";
+  try {
+    const r = await j("/api/lyrics", { idea, lang: $("ideaLang").value, duration: +$("duration").value });
+    $("lyrics").value = r.lyrics; $("prompt").value = r.caption;
+    if (r.bpm) $("bpm").value = r.bpm;
+    $("vlang").value = $("ideaLang").value;
+    if (+$("duration").value < 90) { $("duration").value = 120; $("durationOut").textContent = "120 с"; }
+    checkConflicts(); toast(r.title ? `«${r.title}» готово, жми «Сгенерировать»` : "Текст готов");
+  } catch (e) { toast(e.message); }
+  finally { $("write").disabled = false; $("write").textContent = "Написать"; }
+}
+
+function params() {
+  const p = {
+    prompt: $("prompt").value.trim(), lyrics: $("lyrics").value.trim() || "[Instrumental]",
+    audio_duration: +$("duration").value, batch_size: +$("batch").value, thinking: $("thinking").checked,
+    inference_steps: +$("steps").value || 8, guidance_scale: +$("guidance").value || 7, vocal_language: $("vlang").value,
+  };
+  if ($("bpm").value) p.bpm = +$("bpm").value;
+  if ($("key").value) p.key_scale = $("key").value;
+  if ($("timesig").value) p.time_signature = $("timesig").value;
+  if ($("seed").value !== "") { p.seed = +$("seed").value; p.use_random_seed = false; }
+  return p;
+}
+
+async function generate() {
+  fixConflicts();
+  const p = params();
+  if (!p.prompt) return toast("Опиши трек");
+  $("go").disabled = true;
+  try { await j("/api/generate", p); toast("Пошло"); pollJobs(); }
+  catch (e) { toast(e.message); }
+  finally { setTimeout(() => $("go").disabled = false, 600); }
+}
+
+function load(t) {
+  const p = t.params || {};
+  $("prompt").value = p.prompt || ""; $("lyrics").value = p.lyrics || "[Instrumental]";
+  $("duration").value = p.audio_duration || 60; $("durationOut").textContent = `${$("duration").value} с`;
+  $("bpm").value = p.bpm || t.metas?.bpm || ""; $("key").value = p.key_scale || "";
+  $("steps").value = p.inference_steps || 8; $("guidance").value = p.guidance_scale || 7;
+  $("thinking").checked = !!p.thinking;
+  window.scrollTo({ top: 0, behavior: "smooth" }); toast("Параметры загружены");
+}
+
+let jobsTimer = null;
+async function pollJobs() {
+  clearTimeout(jobsTimer);
+  const jobs = await j("/api/jobs").catch(() => []);
+  const box = $("jobs"); box.innerHTML = "";
+  let running = 0, justDone = false;
+  for (const x of jobs.slice(-6).reverse()) {
+    if (x.status === "done" && x.elapsed > 20) continue;
+    const el = document.createElement("div"); el.className = "job " + (x.status || "");
+    const icon = x.status === "running" ? '<div class="spin"></div>' : x.status === "done" ? "✅" : "⚠️";
+    el.innerHTML = `${icon}<span class="p"></span><span class="meta">${x.status === "done" ? x.took + " с" : x.elapsed + " с"}</span>`;
+    el.querySelector(".p").textContent = x.status === "error" ? x.error : x.prompt;
+    box.appendChild(el);
+    if (x.status === "running") running++;
+    if (x.status === "done") justDone = true;
+  }
+  if (justDone) await loadHistory();
+  if (running) jobsTimer = setTimeout(pollJobs, 1500);
+}
+
+async function loadHistory() { hist = await j("/api/history").catch(() => []); renderTracks(); }
+
+function renderTracks() {
+  const q = $("q").value.toLowerCase(), fav = $("onlyFav").checked;
+  const list = hist.filter(t => (!fav || t.fav) && (!q || (t.params?.prompt || "").toLowerCase().includes(q)));
+  const box = $("tracks"); box.innerHTML = "";
+  if (!list.length) { box.innerHTML = '<div class="empty">Пока пусто. Выбери пресет слева и жми «Сгенерировать».</div>'; return; }
+  for (const t of list) {
+    const m = t.metas || {}, p = t.params || {};
+    const el = document.createElement("div"); el.className = "track";
+    el.innerHTML = `
+      <div class="top"><div class="title"></div>
+        <div class="meta">${Math.round(m.duration || p.audio_duration || 0)} с · ${m.bpm || "?"} BPM · ${m.keyscale || "?"} · ${t.took} с</div></div>
+      <audio controls preload="none" src="/music/${encodeURIComponent(t.file)}"></audio>
+      <div class="acts">
+        <button class="btn ${t.fav ? "fav" : ""}" data-a="fav">${t.fav ? "★" : "☆"}</button>
+        <button class="btn" data-a="again">↻ ещё так же</button>
+        <button class="btn" data-a="load">✎ в форму</button>
+        <a class="btn" download href="/music/${encodeURIComponent(t.file)}">⬇ mp3</a>
+        <select data-a="proj"><option value="">в проект…</option>${projects.map(x => `<option>${x}</option>`).join("")}</select>
+        <span class="meta" style="margin-left:auto">${t.at?.replace(/(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d).*/, "$3.$2 $4:$5") || ""}</span>
+      </div>`;
+    el.querySelector(".title").textContent = p.prompt || t.file;
+    el.querySelector(".title").title = (p.prompt || "") + "\n\n" + (p.lyrics || "");
+    el.querySelector('[data-a="fav"]').onclick = async () => { await j("/api/fav", { file: t.file }); t.fav = !t.fav; renderTracks(); };
+    el.querySelector('[data-a="load"]').onclick = () => load(t);
+    el.querySelector('[data-a="again"]').onclick = async () => {
+      try { await j("/api/generate", { ...p, use_random_seed: true, seed: -1 }); toast("Пошло"); pollJobs(); } catch (e) { toast(e.message); }
+    };
+    el.querySelector('[data-a="proj"]').onchange = async (e) => {
+      if (!e.target.value) return;
+      try { const r = await j("/api/use", { file: t.file, project: e.target.value }); toast("→ " + r.path); } catch (er) { toast(er.message); }
+      e.target.value = "";
+    };
+    box.appendChild(el);
+  }
+}
+
+async function health() {
+  const el = $("health");
+  try {
+    const h = await j("/api/health");
+    el.className = "ok"; el.textContent = `● ${h.loaded_model || "ACE-Step"}${h.models_initialized ? "" : " (модели загрузятся на первом треке)"}`;
+  } catch (e) { el.className = "bad"; el.textContent = "● " + e.message; }
+}
+
+// играет только один трек: старт любого плеера ставит остальные на паузу
+// (событие play не всплывает, поэтому ловим на погружении)
+document.addEventListener("play", (e) => {
+  for (const a of document.querySelectorAll("audio")) if (a !== e.target && !a.paused) a.pause();
+}, true);
+
+setup();
+health(); setInterval(health, 30000);
+j("/api/projects").then(p => { projects = p; loadHistory(); }).catch(loadHistory);
+pollJobs();
+</script>
+</body>
+</html>
