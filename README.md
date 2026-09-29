@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/751d01c0-2dc6-427d-b00d-ec5d7f2c0249
+
 # nd-video-studio
 
 Explainer videos in HTML: compositions in [HyperFrames](https://github.com/heygen-com/hyperframes)
