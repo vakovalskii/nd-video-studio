@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Проверка доступности хаба: каждая модель и ручка, от которых зависит пайп.
+"""Hub availability check: every model and endpoint the pipeline depends on.
 
-Список моделей берётся из /v1/models, каждой чат-модели уходит короткий пинг. Потом по цепочке:
-TTS → whisper-сверка той же фразы, картинка FLUX → vision-модель описывает её, поиск web и tg.
-Ключ из env или из .env в корне репо (не печатается).
+The model list comes from /v1/models, each chat model gets a short ping. Then a chain:
+TTS → whisper check of the same line, FLUX image → vision model describes it, web and tg search.
+Key from env or from .env in the repo root (never printed).
 
-  python3 scripts/nd_probe.py              # всё
-  python3 scripts/nd_probe.py --no-images  # без генерации картинки (бережёт квоту)
+  python3 scripts/nd_probe.py              # everything
+  python3 scripts/nd_probe.py --no-images  # skip image generation (saves quota)
 """
 
 import argparse
@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 sys.path.insert(0, os.path.dirname(__file__))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PIPE = {  # что пайп зовёт по умолчанию
+PIPE = {  # what the pipeline calls by default
     "chat": ["qwen3.8-27b-noreason", "kimi-k2.6", "gemma-4-31b-noreason"],
     "vision": "qwen3.6-35b-a3b-noreason",
     "tts": "qwen3-tts",
@@ -64,7 +64,7 @@ def ping(model):
         text = nd_chat([{"role": "user", "content": "Reply with one word: pong"}], model=model,
                        max_tokens=16, temperature=0, timeout=120)
         if not text.strip():
-            raise RuntimeError("пустой content")
+            raise RuntimeError("empty content")
         return text.strip()
     return fn
 
@@ -73,7 +73,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-images", action="store_true")
     a = ap.parse_args()
-    tmp = os.path.join(ROOT, "music", ".probe")  # music/ в .gitignore
+    tmp = os.path.join(ROOT, "music", ".probe")  # music/ is in .gitignore
     os.makedirs(tmp, exist_ok=True)
 
     models = []
@@ -81,7 +81,7 @@ def main():
     def list_models():
         models.extend(m["id"] for m in nd_json("/v1/models")["data"])
         missing = [m for m in [*PIPE["chat"], PIPE["vision"]] if m not in models]
-        return f"{len(models)} моделей" + (f", нет в списке: {missing}" if missing else "")
+        return f"{len(models)} models" + (f", missing from list: {missing}" if missing else "")
     check("GET /v1/models", list_models)
 
     skip = ("tts", "whisper", "embed", "rerank", "flux", "image", "speech", "audio", "bge", "e5")
@@ -96,15 +96,15 @@ def main():
         with http(f"{nd_base()}/v1/audio/speech", body, {**nd_auth(), "Content-Type": "application/json"}) as r:
             data = r.read()
         if len(data) < 10000:
-            raise RuntimeError(f"подозрительно короткий ответ {len(data)} байт")
+            raise RuntimeError(f"suspiciously short response {len(data)} bytes")
         open(wav, "wb").write(data)
-        return f"{len(data)} байт"
+        return f"{len(data)} bytes"
     if check("tts qwen3-tts (ryan)", tts):
         def stt():
             res = nd_multipart("/v1/audio/transcriptions", {"model": PIPE["stt"]},
                                {"file": ("probe.wav", open(wav, "rb").read(), "audio/wav")})
             return f"«{res.get('text', '').strip()}»"
-        check("stt whisper-1 (сверка фразы)", stt)
+        check("stt whisper-1 (line check)", stt)
 
     png = os.path.join(tmp, "probe.png")
     if not a.no_images:
@@ -116,11 +116,11 @@ def main():
                 if st in ("done", "completed", "success", "succeeded", "finished"):
                     with http(f"{nd_base()}/v1/images/tasks/{sub['task_uid']}/result", headers=nd_auth()) as r:
                         open(png, "wb").write(r.read())
-                    return f"{os.path.getsize(png)} байт"
+                    return f"{os.path.getsize(png)} bytes"
                 if st in ("failed", "error", "cancelled"):
-                    raise RuntimeError(f"задача упала: {st}")
+                    raise RuntimeError(f"task failed: {st}")
                 time.sleep(3)
-            raise TimeoutError("300 с")
+            raise TimeoutError("300 s")
         if check("images FLUX generate", image):
             def vision():
                 b64 = base64.b64encode(open(png, "rb").read()).decode()
@@ -130,11 +130,11 @@ def main():
                     model=PIPE["vision"], max_tokens=16, temperature=0)
             check(f"vision {PIPE['vision']}", vision)
     check("images quota", lambda: json.dumps(nd_json("/v1/images/quota"), ensure_ascii=False)[:90])
-    check("search web", lambda: f"{len(nd_json('/v1/search/web', {'query': 'KV cache', 'limit': 3}).get('results', []))} результатов")
-    check("search tg", lambda: f"{len(nd_json('/v1/search/tg?q=KV%20cache&limit=3').get('results', []))} результатов")
+    check("search web", lambda: f"{len(nd_json('/v1/search/web', {'query': 'KV cache', 'limit': 3}).get('results', []))} results")
+    check("search tg", lambda: f"{len(nd_json('/v1/search/tg?q=KV%20cache&limit=3').get('results', []))} results")
 
     bad = [r for r in rows if not r[1]]
-    print(f"\n{len(rows) - len(bad)}/{len(rows)} OK" + ("" if not bad else ": падают " + ", ".join(r[0] for r in bad)))
+    print(f"\n{len(rows) - len(bad)}/{len(rows)} OK" + ("" if not bad else ": failing " + ", ".join(r[0] for r in bad)))
     sys.exit(1 if bad else 0)
 
 

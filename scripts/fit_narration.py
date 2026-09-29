@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Синхронизация диктора с таймлайном: каждая фраза должна уложиться в своё окно.
+"""Fit narration to the timeline: every line must fit its window.
 
-Срезает тишину по краям, при нехватке места ускоряет фразу через atempo (тембр
-сохраняется). Выше --max-tempo ускорять не стоит: слышно. Такие фразы скрипт
-помечает TOO LONG — их надо сократить в narration.json и переозвучить.
+Trims edge silence; if a line is too long, speeds it up with atempo (timbre
+is preserved). Going above --max-tempo is audible. Such lines are
+flagged TOO LONG: shorten them in narration.json and re-voice.
 
   python3 scripts/fit_narration.py projects/x/narration.json projects/x/audio/raw projects/x/audio/fit
 """
@@ -48,7 +48,7 @@ def main():
     with open(os.path.join(a.out_dir, "fit_report.json"), "w") as f:
         json.dump(report, f, indent=1)
     if bad:
-        raise SystemExit(f"{bad} фраз(ы) не влезают даже с ×{a.max_tempo}: сократи текст и переозвучь (--only)")
+        raise SystemExit(f"{bad} line(s) don't fit even at ×{a.max_tempo}: shorten the text and re-voice (--only)")
 
 
 if __name__ == "__main__":

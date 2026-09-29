@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Локальная студия музыки: страница в браузере поверх своего ACE-Step 1.5.
+"""Local music studio: a browser page on top of your own ACE-Step 1.5.
 
-Сервер на стандартной библиотеке: отдаёт tools/music-studio.html, проксирует задачи в
-ACE-Step (через ssh-туннель, API бокса слушает только 127.0.0.1), складывает готовые треки
-в music/ с историей в music/history.json и умеет положить трек в проект как audio/music.mp3.
+Stdlib-only server: serves tools/music-studio.html, proxies tasks to
+ACE-Step (via ssh tunnel, the box API listens on 127.0.0.1 only), stores finished tracks
+in music/ with history in music/history.json, and can drop a track into a project as audio/music.mp3.
 
   ssh -N -L 18001:127.0.0.1:8001 <gpu-box> &
   python3 scripts/music_studio.py            # → http://127.0.0.1:8765
@@ -60,14 +60,14 @@ def slug(s):
 
 
 def poll(task_id):
-    """Фоновый опрос задачи: готовые файлы скачиваются в music/ и попадают в историю."""
+    """Background task polling: finished files are downloaded to music/ and added to history."""
     job = JOBS[task_id]
     while True:
         time.sleep(2)
         try:
             q = api("/query_result", {"task_id_list": [task_id]})
-        except Exception as e:  # туннель моргнул — пробуем дальше
-            job["note"] = f"опрос: {type(e).__name__}"
+        except Exception as e:  # tunnel blinked, keep trying
+            job["note"] = f"poll: {type(e).__name__}"
             continue
         item = (q.get("data") or q)[0]
         st = item.get("status")
@@ -107,10 +107,10 @@ Return ONLY JSON: {{"title": str, "caption": str, "bpm": int, "lyrics": str}}"""
 
 
 def write_song(idea, lang, seconds, style):
-    """Текст песни и описание трека моделью хаба: LM внутри ACE-Step по-русски пишет слабо."""
+    """Lyrics and track caption from a hub model: the LM inside ACE-Step writes poor Russian."""
     from ndv_common import extract_json, nd_chat
     if not idea.strip():
-        raise ValueError("пустая идея")
+        raise ValueError("empty idea")
     names = {"ru": "Russian", "en": "English", "es": "Spanish", "de": "German", "fr": "French", "zh": "Chinese", "ja": "Japanese"}
     user = f"Idea: {idea}" + (f"\nStyle wishes: {style}" if style.strip() else "")
     out = extract_json(nd_chat([{"role": "system", "content": SONG_SYSTEM.format(lang_name=names.get(lang, "Russian"), seconds=seconds)},
@@ -132,7 +132,7 @@ class H(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def send_audio(self, path):
-        """Отдача с Range: без 206 и Accept-Ranges браузер не даёт перематывать плеер."""
+        """Range-aware serving: without 206 and Accept-Ranges the browser won't let the player seek."""
         data = open(path, "rb").read()
         size = len(data)
         m = re.match(r"bytes=(\d*)-(\d*)", self.headers.get("Range") or "")
@@ -143,7 +143,7 @@ class H(BaseHTTPRequestHandler):
             if m.group(1):
                 start = int(m.group(1))
                 end = int(m.group(2)) if m.group(2) else size - 1
-            else:  # bytes=-N: последние N байт
+            else:  # bytes=-N: last N bytes
                 start, end = max(0, size - int(m.group(2))), size - 1
             end = min(end, size - 1)
             if start > end:
@@ -160,7 +160,7 @@ class H(BaseHTTPRequestHandler):
         try:
             self.wfile.write(data[start:end + 1])
         except (BrokenPipeError, ConnectionResetError):
-            pass  # браузер оборвал запрос при перемотке, это нормально
+            pass  # browser aborted the request on seek, that's fine
 
     def body(self):
         n = int(self.headers.get("Content-Length") or 0)
@@ -174,7 +174,7 @@ class H(BaseHTTPRequestHandler):
             try:
                 return self.send(200, api("/health").get("data", {}))
             except Exception as e:
-                return self.send(503, {"error": f"ACE-Step недоступен ({BASE}): {type(e).__name__}. Туннель поднят?"})
+                return self.send(503, {"error": f"ACE-Step unavailable ({BASE}): {type(e).__name__}. Is the tunnel up?"})
         if u.path == "/api/history":
             return self.send(200, history())
         if u.path == "/api/jobs":
@@ -187,9 +187,9 @@ class H(BaseHTTPRequestHandler):
         if u.path.startswith("/music/"):
             path = os.path.join(MUSIC, os.path.basename(urllib.parse.unquote(u.path)))
             if not os.path.isfile(path):
-                return self.send(404, {"error": "нет файла"})
+                return self.send(404, {"error": "no such file"})
             return self.send_audio(path)
-        self.send(404, {"error": "нет такого"})
+        self.send(404, {"error": "not found"})
 
     def do_POST(self):
         u = urllib.parse.urlparse(self.path)
@@ -201,10 +201,10 @@ class H(BaseHTTPRequestHandler):
             try:
                 resp = api("/release_task", params)
             except Exception as e:
-                return self.send(503, {"error": f"ACE-Step недоступен: {type(e).__name__}: {e}"})
+                return self.send(503, {"error": f"ACE-Step unavailable: {type(e).__name__}: {e}"})
             task = (resp.get("data") or resp).get("task_id")
             if not task:
-                return self.send(502, {"error": f"нет task_id: {resp}"})
+                return self.send(502, {"error": f"no task_id: {resp}"})
             JOBS[task] = {"params": params, "t0": time.time(), "status": "running"}
             threading.Thread(target=poll, args=(task,), daemon=True).start()
             return self.send(200, {"task_id": task})
@@ -212,10 +212,10 @@ class H(BaseHTTPRequestHandler):
             try:
                 return self.send(200, write_song(b.get("idea", ""), b.get("lang") or "ru",
                                                  float(b.get("duration") or 90), b.get("style") or ""))
-            except SystemExit as e:  # env_key без ключа
-                return self.send(400, {"error": f"{e}. Запусти студию с ND_API_KEY"})
+            except SystemExit as e:  # env_key with no key
+                return self.send(400, {"error": f"{e}. Start the studio with ND_API_KEY"})
             except Exception as e:
-                return self.send(502, {"error": f"не вышло сочинить: {type(e).__name__}: {e}"})
+                return self.send(502, {"error": f"failed to write song: {type(e).__name__}: {e}"})
         if u.path == "/api/fav":
             with LOCK:
                 h = history()
@@ -228,14 +228,14 @@ class H(BaseHTTPRequestHandler):
             src = os.path.join(MUSIC, os.path.basename(b.get("file", "")))
             proj = os.path.join(ROOT, "projects", os.path.basename(b.get("project", "")))
             if not os.path.isfile(src) or not os.path.isdir(proj):
-                return self.send(400, {"error": "нет трека или проекта"})
+                return self.send(400, {"error": "missing track or project"})
             os.makedirs(os.path.join(proj, "audio"), exist_ok=True)
             dst = os.path.join(proj, "audio", "music.mp3")
-            if os.path.exists(dst):  # прежний трек не теряем
+            if os.path.exists(dst):  # keep the previous track
                 shutil.copy2(dst, os.path.join(proj, "audio", f"music.prev-{time.strftime('%Y%m%d-%H%M%S')}.mp3"))
             shutil.copy2(src, dst)
             return self.send(200, {"ok": True, "path": os.path.relpath(dst, ROOT)})
-        self.send(404, {"error": "нет такого"})
+        self.send(404, {"error": "not found"})
 
 
 def main():
@@ -246,7 +246,7 @@ def main():
     a = ap.parse_args()
     BASE = a.api.rstrip("/")
     os.makedirs(MUSIC, exist_ok=True)
-    print(f"Music Studio: http://127.0.0.1:{a.port}  (ACE-Step {BASE}, треки в {MUSIC})")
+    print(f"Music Studio: http://127.0.0.1:{a.port}  (ACE-Step {BASE}, tracks in {MUSIC})")
     ThreadingHTTPServer(("127.0.0.1", a.port), H).serve_forever()
 
 

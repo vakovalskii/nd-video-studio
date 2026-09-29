@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Карта бита трека: доли, сильные доли, удары → beats.json для композиции.
+"""Beat map of a track: beats, downbeats, hits → beats.json for the composition.
 
-Идея из rocketmandrey/vibecoder-anthem: склейки, удары камеры и строчки караоке ставятся не
-на «ровную» сетку по BPM, а на реальные доли трека. У генеративной музыки темп плывёт
-(Suno там уезжал с 0.639 до 0.662 с на долю после 2:00), и фиксированная сетка к концу
-ролика съезжает от звука. ACE-Step держит заданный BPM ровнее, но начало и сильные доли
-всё равно надо снимать с аудио.
+Idea from rocketmandrey/vibecoder-anthem: cuts, camera hits and karaoke lines go not
+on a "clean" BPM grid but on the track's real beats. Generated music drifts in tempo
+(Suno there went from 0.639 to 0.662 s per beat after 2:00), and a fixed grid drifts
+off the audio by the end. ACE-Step holds the requested BPM better, but the start and downbeats
+still have to be taken from the audio.
 
   uv run --no-project --with librosa python3 scripts/beat_map.py projects/x/audio/music.mp3 projects/x/beats.json [--bpm 174]
 
-beats.json: {"bpm", "beats": [t...], "downbeats": [t...], "hits": [[t, сила]...]}
-сила удара = во сколько раз всплеск громкости выше медианного (как hits.txt в anthem).
+beats.json: {"bpm", "beats": [t...], "downbeats": [t...], "hits": [[t, strength]...]}
+hit strength = how many times the loudness spike exceeds the median (like hits.txt in anthem).
 """
 
 import argparse
@@ -24,9 +24,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("audio")
     ap.add_argument("out")
-    ap.add_argument("--bpm", type=float, help="подсказка темпа (ACE-Step знает его точно из запроса)")
+    ap.add_argument("--bpm", type=float, help="tempo hint (ACE-Step knows it exactly from the request)")
     ap.add_argument("--beats-per-bar", type=int, default=4)
-    ap.add_argument("--min-hit", type=float, default=4.5, help="порог удара, в медианах")
+    ap.add_argument("--min-hit", type=float, default=4.5, help="hit threshold, in medians")
     a = ap.parse_args()
 
     y, sr = librosa.load(a.audio, sr=22050, mono=True)
@@ -35,14 +35,14 @@ def main():
     tempo, frames = librosa.beat.beat_track(onset_envelope=env, sr=sr, units="frames", **kw)
     beats = librosa.frames_to_time(frames, sr=sr)
 
-    # сильная доля: из четырёх возможных сдвигов берём тот, где сумма атак на «раз» больше
-    low = librosa.onset.onset_strength(y=y, sr=sr, fmax=150)  # бочка живёт внизу
+    # downbeat: of the four possible offsets, pick the one with the most onset energy on "one"
+    low = librosa.onset.onset_strength(y=y, sr=sr, fmax=150)  # the kick lives down low
     strength = low[np.clip(frames, 0, len(low) - 1)]
     n = a.beats_per_bar
     phase = int(np.argmax([strength[k::n].sum() for k in range(n)]))
     downbeats = beats[phase::n]
 
-    # удары: пики огибающей, нормированные на медиану
+    # hits: envelope peaks, normalized to the median
     med = float(np.median(env[env > 0])) or 1.0
     peaks = librosa.util.peak_pick(env, pre_max=6, post_max=6, pre_avg=20, post_avg=20, delta=med, wait=8)
     hits = [[round(float(librosa.frames_to_time(p, sr=sr)), 3), round(float(env[p] / med), 1)]
@@ -53,8 +53,8 @@ def main():
            "downbeats": [round(float(t), 3) for t in downbeats], "hits": hits}
     json.dump(out, open(a.out, "w"))
     iv = np.diff(beats)
-    print(f"{a.audio}: {bpm:.1f} BPM, {len(beats)} долей, {len(downbeats)} тактов, {len(hits)} ударов; "
-          f"доля {iv.mean():.3f}±{iv.std():.3f} с (дрейф {iv[-8:].mean() - iv[:8].mean():+.3f} с) → {a.out}")
+    print(f"{a.audio}: {bpm:.1f} BPM, {len(beats)} beats, {len(downbeats)} bars, {len(hits)} hits; "
+          f"beat {iv.mean():.3f}±{iv.std():.3f} s (drift {iv[-8:].mean() - iv[:8].mean():+.3f} s) → {a.out}")
 
 
 if __name__ == "__main__":

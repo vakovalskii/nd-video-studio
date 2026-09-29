@@ -1,14 +1,14 @@
-Этот каталог — частичная копия https://github.com/heygen-com/hyperframes
-на коммите 0a5e3c7fc4 (main, 2026-09-27), лицензия Apache License 2.0 (см. LICENSE).
+This directory is a partial copy of https://github.com/heygen-com/hyperframes
+at commit 0a5e3c7fc4 (main, 2026-09-27), licensed under Apache License 2.0 (see LICENSE).
 
-Что взято и зачем:
-- skills/hyperframes            роутер навыков, карта возможностей
-- skills/hyperframes-core       контракт композиции: data-* тайминги, class="clip", детерминизм
-- skills/hyperframes-animation  GSAP-адаптер, переходы, правила анимации
-- skills/hyperframes-keyframes  seek-safe анимация
+What is taken and why:
+- skills/hyperframes            skill router, capability map
+- skills/hyperframes-core       composition contract: data-* timings, class="clip", determinism
+- skills/hyperframes-animation  GSAP adapter, transitions, animation rules
+- skills/hyperframes-keyframes  seek-safe animation
 - skills/hyperframes-cli        init / check / snapshot / preview / render
-- docs/concepts/determinism.mdx почему кадр всегда одинаковый
+- docs/concepts/determinism.mdx why a frame is always the same
 
-Файлы не изменены. Сам рендерер не вендорится: он ставится из npm
-(hyperframes@0.8.81, закреплено в projects/*/package.json).
-Обновление: scripts/sync_hyperframes.sh <sha>.
+Files are unmodified. The renderer itself is not vendored: it is installed from npm
+(hyperframes@0.8.81, pin it in each project's package.json).
+Update: scripts/sync_hyperframes.sh <sha>.

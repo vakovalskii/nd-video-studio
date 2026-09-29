@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Сверка озвучки и пословные тайминги через whisper-1 хаба.
+"""Voice-over check and word timings via the hub's whisper-1.
 
-Что делает для каждой line_NN.wav:
-- распознаёт и сравнивает с текстом из narration.json: TTS иногда глотает, переставляет или
-  добавляет слова, и на слух это легко пропустить. Похожесть ниже порога = переозвучить (--only N);
-- кладёт слова с временами (уже со сдвигом на start фразы) в words.json. Из него композиция
-  подсвечивает слово в субтитрах ровно тогда, когда оно звучит.
+For each line_NN.wav it:
+- transcribes and compares with the narration.json text: TTS sometimes drops, reorders or
+  adds words, which is easy to miss by ear. Similarity below threshold = re-voice (--only N);
+- writes timed words (already offset by the line start) to words.json. The composition uses it
+  to highlight each caption word exactly when it is spoken.
 
   ND_API_KEY=sk-... python3 scripts/nd_align.py projects/x/narration.json projects/x/audio/fit projects/x/words.json
 """
@@ -28,7 +28,7 @@ def norm(s):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("narration")
-    ap.add_argument("audio_dir", help="обычно audio/fit (после подгонки темпа)")
+    ap.add_argument("audio_dir", help="usually audio/fit (after tempo fitting)")
     ap.add_argument("out")
     ap.add_argument("--model", default="whisper-1")
     ap.add_argument("--min-sim", type=float, default=0.85)
@@ -58,7 +58,7 @@ def main():
         json.dump(out, f, ensure_ascii=False, indent=1)
     print("→", a.out)
     if bad:
-        print(f"⚠️ переозвучить: --only {' '.join(map(str, bad))}")
+        print(f"⚠️ re-voice: --only {' '.join(map(str, bad))}")
         sys.exit(2)
 
 

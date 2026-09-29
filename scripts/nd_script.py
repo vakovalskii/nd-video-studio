@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Сценарий ролика моделью хаба: бриф (+ sources.md) → narration.json со сценами и таймингами.
+"""Video script from a hub model: brief (+ sources.md) → narration.json with scenes and timings.
 
-Модель раскладывает мысль по сценам (заголовок-вопрос, 2-4 фразы диктора, key idea), а
-тайминги считает скрипт, не модель: старт фразы = конец прошлой + пауза, длительность по
-темпу речи (EN ~2.1 слова/с, RU ~12 знаков/с у TTS хаба). Это черновик: после озвучки
-nd_retime.py ставит старты по реальной длине фраз.
+The model splits the idea into scenes (question heading, 2-4 narrator lines, key idea), while
+timings are computed by the script, not the model: line start = previous end + pause, duration from
+speech rate (EN ~2.1 words/s, RU ~12 chars/s for the hub TTS). This is a draft: after voicing,
+nd_retime.py sets starts from the real line lengths.
 
   ND_API_KEY=sk-... python3 scripts/nd_script.py brief.md projects/x/narration.json \
       --sources projects/x/sources.md --lang en --seconds 90
@@ -38,9 +38,9 @@ def main():
     ap.add_argument("--sources")
     ap.add_argument("--lang", default="en", choices=["en", "ru"])
     ap.add_argument("--seconds", type=float, default=90)
-    ap.add_argument("--model", help="по умолчанию ND_CHAT_MODEL или qwen3.8-27b-noreason")
-    ap.add_argument("--pause", type=float, default=0.6, help="пауза между фразами")
-    ap.add_argument("--scene-pause", type=float, default=1.4, help="пауза на смене сцены")
+    ap.add_argument("--model", help="default ND_CHAT_MODEL or qwen3.8-27b-noreason")
+    ap.add_argument("--pause", type=float, default=0.6, help="pause between lines")
+    ap.add_argument("--scene-pause", type=float, default=1.4, help="pause at scene change")
     a = ap.parse_args()
 
     brief = open(a.brief).read()
@@ -67,9 +67,9 @@ def main():
            "scenes": scenes, "lines": lines}
     with open(a.out, "w") as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
-    print(f"{len(scenes)} сцен, {len(lines)} фраз, ~{out['duration']} с → {a.out}")
+    print(f"{len(scenes)} scenes, {len(lines)} lines, ~{out['duration']} s → {a.out}")
     if out["duration"] > a.seconds * 1.15:
-        print(f"⚠️ длиннее цели на {out['duration'] - a.seconds:.0f} с: сократи бриф или перезапусти")
+        print(f"⚠️ over target by {out['duration'] - a.seconds:.0f} s: shorten the brief or rerun")
 
 
 if __name__ == "__main__":

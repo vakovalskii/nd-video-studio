@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Озвучка narration.json через TTS хаба (api.neuraldeep.ru/v1/audio/speech, Qwen3-TTS).
+"""Voice narration.json via the hub TTS (api.neuraldeep.ru/v1/audio/speech, Qwen3-TTS).
 
-Голоса: vivian, serena, ono_anna, sohee, dylan, ryan, aiden, uncle_fu. Стиль — свободным
-текстом в instructions, скорость — speed. Русский идёт через ESpeech + RUAccent.
+Voices: vivian, serena, ono_anna, sohee, dylan, ryan, aiden, uncle_fu. Style is free
+text in instructions, rate is speed. Russian goes through ESpeech + RUAccent.
 
   ND_API_KEY=sk-... python3 scripts/tts_hub.py projects/x/narration.json projects/x/audio/raw --voice ryan
 """
@@ -20,7 +20,7 @@ def main():
     ap.add_argument("narration")
     ap.add_argument("out_dir")
     ap.add_argument("--voice", default=None)
-    ap.add_argument("--language", help="English, Russian, ...; по умолчанию из narration.json")
+    ap.add_argument("--language", help="English, Russian, ...; default from narration.json")
     ap.add_argument("--speed", type=float, default=1.0)
     ap.add_argument("--only", type=int, nargs="*")
     a = ap.parse_args()

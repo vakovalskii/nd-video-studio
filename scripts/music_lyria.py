@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Музыка через Google Lyria 3 (OpenRouter): pro = полный трек $0.08, clip = 30 с $0.04.
+"""Music via Google Lyria 3 (OpenRouter): pro = full track $0.08, clip = 30 s $0.04.
 
-Только stream: true; трек приходит одним base64-чанком в delta.audio.data (mp3).
-Промпт со словами про AI/видео/продукт Google режет как PROHIBITED_CONTENT (денег не
-берёт) — описывать только музыку: жанр, BPM, инструменты, настроение, без вокала.
-Как и gpt-audio, с RU-IP OpenRouter отвечает 403.
+stream: true only; the track arrives as one base64 chunk in delta.audio.data (mp3).
+A prompt mentioning AI/video/a product gets blocked by Google as PROHIBITED_CONTENT (no
+charge): describe music only: genre, BPM, instruments, mood, no vocals.
+Like gpt-audio, OpenRouter returns 403 from RU IPs.
 
   OPENROUTER_API_KEY=... python3 scripts/music_lyria.py "Instrumental minimal electronic, 110 BPM, ..." music.mp3
 """
@@ -48,7 +48,7 @@ def main():
                 if au.get("data"):
                     chunks.append(au["data"])
     if not chunks:
-        raise SystemExit(f"аудио не пришло: {err}. PROHIBITED_CONTENT = убрать из промпта всё, кроме музыки")
+        raise SystemExit(f"no audio returned: {err}. PROHIBITED_CONTENT = strip everything but music from the prompt")
     data = b"".join(base64.b64decode(c) for c in chunks)
     with open(a.out, "wb") as f:
         f.write(data)

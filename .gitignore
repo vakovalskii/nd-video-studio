@@ -2,8 +2,8 @@ node_modules/
 .DS_Store
 __pycache__/
 *.pcm
-# проекты (ролики, голос, музыка, брифы) — локальные, в публичный репо не кладём
+# projects (videos, voice, music, briefs) are local, not for the public repo
 projects/
 .env
-# сгенерированная музыка из Music Studio (история в music/history.json)
+# music generated in Music Studio (history in music/history.json)
 music/

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Ревью кадров vision-моделью хаба: contact-sheet из `hyperframes snapshot` → замечания.
+"""Frame review by a hub vision model: contact sheet from `hyperframes snapshot` → notes.
 
-HyperFrames умеет --describe только через Gemini; тут то же самое на своей модели. Модель
-смотрит на то, что линтер не видит: текст налезает на текст, мелко для телефона, пустой
-кадр, субтитр перекрывает главное, непонятно о чём сцена.
+HyperFrames does --describe only via Gemini; this does the same on our own model. The model
+looks at what the linter can't see: overlapping text, too small for a phone, empty
+frame, captions covering the key visual, unclear scene.
 
   ND_API_KEY=sk-... python3 scripts/nd_review.py projects/x/snapshots/contact-sheet-*.jpg --brief "vertical Shorts"
 """

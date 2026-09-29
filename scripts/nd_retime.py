@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Тайминги по живой озвучке: старты фраз и сцен в narration.json по реальной длине raw-клипов.
+"""Timings from the actual voice-over: line and scene starts in narration.json from real raw clip lengths.
 
-Нужен, когда сценарий писала модель (nd_script.py) и композиции ещё нет: темп TTS по тексту
-не угадать, поэтому сначала озвучка, потом старты, потом HTML. Тишину по краям клипа не
-считаем (срез как в fit_narration.py), паузы между фразами и на смене сцены задаются.
-Если композиция уже свёрстана под старты, этот скрипт не нужен: там fit_narration.py.
+Use it when the script was written by a model (nd_script.py) and there is no composition yet: TTS pace
+can't be guessed from text, so voice first, then starts, then HTML. Edge silence of a clip is not
+counted (trimmed as in fit_narration.py); pauses between lines and at scene changes are configurable.
+If the composition is already laid out to the starts, use fit_narration.py instead.
 
   python3 scripts/nd_retime.py projects/x/narration.json projects/x/audio/raw
 """
@@ -21,7 +21,7 @@ from fit_narration import TRIM  # noqa: E402
 
 
 def spoken(path):
-    """Длина речи без тишины по краям, сек."""
+    """Speech length without edge silence, seconds."""
     out = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-af", TRIM, "-f", "null", "-"],
                          capture_output=True, text=True).stderr
     t = [x for x in out.split() if x.startswith("time=")][-1][5:]
@@ -35,7 +35,7 @@ def main():
     ap.add_argument("raw_dir")
     ap.add_argument("--pause", type=float, default=0.5)
     ap.add_argument("--scene-pause", type=float, default=1.2)
-    ap.add_argument("--tail", type=float, default=2.5, help="хвост после последней фразы (outro)")
+    ap.add_argument("--tail", type=float, default=2.5, help="tail after the last line (outro)")
     a = ap.parse_args()
 
     n = json.load(open(a.narration))
@@ -53,7 +53,7 @@ def main():
         prev_scene = sc
     n["duration"] = round(t + a.tail)
     json.dump(n, open(a.narration, "w"), ensure_ascii=False, indent=1)
-    print(f"длина ролика {n['duration']} с → {a.narration}")
+    print(f"video length {n['duration']} s → {a.narration}")
 
 
 if __name__ == "__main__":

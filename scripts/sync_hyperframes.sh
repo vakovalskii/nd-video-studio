@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Обновить вендоренные навыки HyperFrames до нужного коммита (по умолчанию main).
-# Тянет только то, что перечислено в vendor/hyperframes/NOTICE.nd-video-studio.
+# Update the vendored HyperFrames skills to a given commit (default main).
+# Pulls only what's listed in vendor/hyperframes/NOTICE.nd-video-studio.
 set -euo pipefail
 SHA="${1:-main}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -18,5 +18,5 @@ DEST="$ROOT/vendor/hyperframes"
 cp "$DEST/NOTICE.nd-video-studio" "$TMP/x/"
 rsync -a --delete "$TMP/x/" "$DEST/"
 NEW="${TOP##*-}"
-sed -i '' -E "s/на коммите [0-9a-f]+/на коммите $NEW/" "$DEST/NOTICE.nd-video-studio"
+sed -i '' -E "s/at commit [0-9a-f]+/at commit $NEW/" "$DEST/NOTICE.nd-video-studio"
 echo "vendor/hyperframes → $NEW"

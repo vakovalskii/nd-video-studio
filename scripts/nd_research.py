@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Ресёрч под ролик через Search API хаба: запросы → выдержки с источниками в sources.md.
+"""Research for a video via the hub Search API: queries → excerpts with sources in sources.md.
 
-Сценарий потом пишется только по этим выдержкам, и в кадре видно, что подтверждено, а что оценка.
-Поиск тратит квоту Search API (web дороже tg).
+The script is then written only from these excerpts, and the frame shows what is confirmed vs estimated.
+Search spends Search API quota (web costs more than tg).
 
   ND_API_KEY=sk-... python3 scripts/nd_research.py projects/x/sources.md "Jev TypeSafe AI architecture" "Jev pricing latency"
-  ... --tg "Jev модель"          # ещё и поиск по Telegram-каналам
+  ... --tg "Jev model"          # also search Telegram channels
 """
 
 import argparse
@@ -22,8 +22,8 @@ def main():
     ap.add_argument("out")
     ap.add_argument("queries", nargs="+")
     ap.add_argument("--limit", type=int, default=5)
-    ap.add_argument("--tg", nargs="*", default=[], help="запросы по Telegram-каналам")
-    ap.add_argument("--chars", type=int, default=1500, help="сколько знаков выдержки на источник")
+    ap.add_argument("--tg", nargs="*", default=[], help="Telegram channel queries")
+    ap.add_argument("--chars", type=int, default=1500, help="excerpt length per source, chars")
     a = ap.parse_args()
 
     parts, seen = [], set()
@@ -46,7 +46,7 @@ def main():
         print(f"tg «{q}»: {len(res.get('results', []))}")
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w") as f:
-        f.write("# Источники\n\n" + "\n".join(parts))
+        f.write("# Sources\n\n" + "\n".join(parts))
     print("→", a.out)
 
 

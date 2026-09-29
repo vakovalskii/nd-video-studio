@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Озвучка narration.json через openai/gpt-audio (OpenRouter).
+"""Voice narration.json via openai/gpt-audio (OpenRouter).
 
-OpenRouter режет RU-IP (403 "Access denied by security policy"): запускать там,
-где он доступен (FI-бокс), или указать OPENROUTER_API_BASE на свой egress-прокси.
+OpenRouter blocks RU IPs (403 "Access denied by security policy"): run it where
+it's reachable (FI box), or point OPENROUTER_API_BASE at your own egress proxy.
 
-Модель любит отвечать как ассистент («Understood, here is…») и читать служебные
-теги. Поэтому: system = «ты TTS-движок», user = голый текст, и каждая фраза
-сверяется с расшифровкой (delta.audio.transcript) с перезапросом.
+The model tends to answer like an assistant ("Understood, here is…") and read out service
+tags. Hence: system = "you are a TTS engine", user = bare text, and each line
+is checked against the transcript (delta.audio.transcript) with retries.
 
   OPENROUTER_API_KEY=... python3 scripts/tts_gpt_audio.py projects/x/narration.json projects/x/audio/raw
 """
@@ -40,7 +40,7 @@ def speak(base, key, voice, style, text, tries):
         "model": "openai/gpt-audio",
         "modalities": ["text", "audio"],
         "audio": {"voice": voice, "format": "pcm16"},
-        "stream": True,  # аудио-выход у OpenRouter только стримом
+        "stream": True,  # OpenRouter audio output is stream-only
         "messages": [{"role": "system", "content": SYS.format(style=style)}, {"role": "user", "content": text}],
     }
     hdr = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
@@ -68,15 +68,15 @@ def speak(base, key, voice, style, text, tries):
         print(f"  try {attempt}: {'ok' if ok else 'MISMATCH'} {len(pcm) / 2 / RATE:.2f}s ${cost:.4f} | {said[:70]}")
         if ok:
             return pcm
-    raise SystemExit(f"не удалось дословно озвучить: {text!r}")
+    raise SystemExit(f"failed to voice verbatim: {text!r}")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("narration")
     ap.add_argument("out_dir")
-    ap.add_argument("--voice", help="onyx, ash, verse, ballad, echo… (по умолчанию из narration.json)")
-    ap.add_argument("--only", type=int, nargs="*", help="номера фраз для переозвучки")
+    ap.add_argument("--voice", help="onyx, ash, verse, ballad, echo… (default from narration.json)")
+    ap.add_argument("--only", type=int, nargs="*", help="line numbers to re-voice")
     ap.add_argument("--tries", type=int, default=4)
     a = ap.parse_args()
 

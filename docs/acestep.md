@@ -1,25 +1,25 @@
-# ACE-Step 1.5 XL на своём GPU
+# ACE-Step 1.5 XL on your own GPU
 
-Открытая модель генерации музыки, лицензия MIT, репозиторий
-https://github.com/ace-step/ACE-Step-1.5. XL = DiT на 4B параметров (~9 ГБ bf16).
-Нужно ≥12 ГБ VRAM с offload и квантованием, ≥20 ГБ без них.
+An open music generation model, MIT license, repository
+https://github.com/ace-step/ACE-Step-1.5. XL = a 4B-parameter DiT (~9 GB bf16).
+Needs ≥12 GB VRAM with offload and quantization, ≥20 GB without them.
 
-## Эталонная установка
+## Reference setup
 
-Одна RTX A4500 20 ГБ, контейнер `acestep-xl`: DiT **XL turbo 4B** + LM **1.7B**, без offload.
-Ниже `<gpu-box>` — ssh-алиас своего GPU-сервера.
+A single RTX A4500 20 GB, container `acestep-xl`: DiT **XL turbo 4B** + LM **1.7B**, no offload.
+Below, `<gpu-box>` is the ssh alias of your GPU server.
 
-Замер: XL с LM занимает ~16.6 ГБ, на соседей карты остаётся ~3 ГБ. 60 с трека с
-`thinking` за 78 с, два варианта по 60 с без него за 11 с. Больше двух вариантов за раз не
-давать (в студии кнопка ограничена), иначе на 20 ГБ карте не хватит памяти.
+Measured: XL with LM takes ~16.6 GB, leaving ~3 GB for other tenants of the card. A 60 s track
+with `thinking` takes 78 s; two 60 s variants without it take 11 s. Don't request more than two
+variants at once (the studio button is capped), otherwise a 20 GB card runs out of memory.
 
-Прежний `acestep-turbo` (2B + LM 0.6B, ~7.5 ГБ) остановлен и оставлен как запасной.
+The previous `acestep-turbo` (2B + LM 0.6B, ~7.5 GB) is a fallback option for smaller cards.
 
-- исходники: `/srv/acestep/ACE-Step-1.5` (коммит `ca1e85f`, 29.08.26)
-- образ: `acestep:bench` (их `Dockerfile`, CUDA 12.8)
-- веса: `/srv/acestep/checkpoints` (монтируется в `/app/checkpoints`)
+- sources: `/srv/acestep/ACE-Step-1.5` (commit `ca1e85f`, 2026-08-29)
+- image: `acestep:bench` (their `Dockerfile`, CUDA 12.8)
+- weights: `/srv/acestep/checkpoints` (mounted at `/app/checkpoints`)
 
-## Запуск
+## Running
 
 ```bash
 ssh <gpu-box>
@@ -31,19 +31,19 @@ docker run -d --name acestep-xl --gpus '"device=1"' --memory 32g --cpus 8 \
   -e ACESTEP_LM_MODEL_PATH=acestep-5Hz-lm-1.7B \
   -e ACESTEP_OFFLOAD_TO_CPU=false -e ACESTEP_LLM_BACKEND=pt \
   acestep:bench
-docker logs -f acestep-xl          # ждать загрузки моделей
+docker logs -f acestep-xl          # wait for the models to load
 ```
 
-С ноутбука:
+From the laptop:
 
 ```bash
 ssh -N -L 8001:127.0.0.1:8001 <gpu-box> &
 python3 scripts/music_acestep.py "Instrumental minimal electronic, 110 BPM, pulsing analog synth arpeggio, soft sub bass, no vocals" music.mp3 --duration 120 --bpm 110 --model acestep-v15-xl-turbo
 ```
 
-Погасить: `docker stop acestep-xl` (контейнер остаётся, `docker start acestep-xl` поднимет снова).
+Stop: `docker stop acestep-xl` (the container stays, `docker start acestep-xl` brings it back).
 
-## Правила парка
+## Shared box rules
 
-Эксперименты на общем GPU-боксе — только отдельным контейнером с `--memory` и своим
-`--gpus device=N`, живые движки соседей не трогать.
+Experiments on a shared GPU box go only in a separate container with `--memory` and its own
+`--gpus device=N`; don't touch the neighbors' live engines.

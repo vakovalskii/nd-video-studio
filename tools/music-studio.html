@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -85,69 +85,69 @@
 <body>
 <header>
   <h1>🎛 Music Studio</h1>
-  <span class="sub">ACE-Step 1.5 · свой GPU</span>
-  <span id="health">проверяю…</span>
+  <span class="sub">ACE-Step 1.5 · own GPU</span>
+  <span id="health">checking…</span>
 </header>
 <main>
   <section class="card">
-    <h2>Трек</h2>
+    <h2>Track</h2>
     <div class="chips presets" id="presets"></div>
 
     <div class="idea">
-      <label for="idea">✍️ Песня из идеи · <span class="hint">модель хаба напишет текст и подберёт жанр</span></label>
+      <label for="idea">✍️ Song from an idea · <span class="hint">a hub model writes the lyrics and picks the genre</span></label>
       <div class="ideaRow">
-        <input id="idea" placeholder="например: песня про жизнь, светлая грусть, акустика">
-        <select id="ideaLang" title="язык текста"><option value="ru">ru</option><option value="en">en</option><option value="es">es</option><option value="de">de</option><option value="fr">fr</option></select>
-        <button class="btn2" id="write">Написать</button>
+        <input id="idea" placeholder="e.g.: a song about life, bittersweet, acoustic">
+        <select id="ideaLang" title="lyrics language"><option value="ru">ru</option><option value="en">en</option><option value="es">es</option><option value="de">de</option><option value="fr">fr</option></select>
+        <button class="btn2" id="write">Write</button>
       </div>
     </div>
 
-    <label for="prompt">Описание (жанр, инструменты, настроение, по-английски лучше)</label>
+    <label for="prompt">Description (genre, instruments, mood; English works best)</label>
     <textarea id="prompt">Instrumental minimal electronic, pulsing analog synth arpeggio, soft sub bass, airy pads, cool focused mood, no vocals</textarea>
     <div class="chips" id="tags"></div>
 
-    <label for="lyrics">Текст песни · <span class="hint">[Instrumental] = без голоса; куплеты [Verse], [Chorus]</span></label>
+    <label for="lyrics">Lyrics · <span class="hint">[Instrumental] = no vocals; sections [Verse], [Chorus]</span></label>
     <textarea id="lyrics">[Instrumental]</textarea>
     <div id="warn"></div>
 
-    <label>Длительность</label>
-    <div class="range"><input type="range" id="duration" min="10" max="240" step="5" value="60"><output id="durationOut">60 с</output></div>
+    <label>Duration</label>
+    <div class="range"><input type="range" id="duration" min="10" max="240" step="5" value="60"><output id="durationOut">60 s</output></div>
 
     <div class="row3">
-      <div><label for="bpm">BPM</label><input id="bpm" type="number" min="40" max="220" placeholder="авто"></div>
-      <div><label for="key">Тональность</label><select id="key"></select></div>
-      <div><label for="batch">Вариантов</label><select id="batch"><option>1</option><option selected>2</option></select></div>
+      <div><label for="bpm">BPM</label><input id="bpm" type="number" min="40" max="220" placeholder="auto"></div>
+      <div><label for="key">Key</label><select id="key"></select></div>
+      <div><label for="batch">Variants</label><select id="batch"><option>1</option><option selected>2</option></select></div>
     </div>
 
-    <label class="toggle"><input type="checkbox" id="thinking"> LM продумывает трек (качество выше, дольше)</label>
+    <label class="toggle"><input type="checkbox" id="thinking"> LM plans the track (better quality, slower)</label>
 
     <details>
-      <summary>Тонкая настройка</summary>
+      <summary>Fine tuning</summary>
       <div class="row">
-        <div><label for="steps">Шаги (turbo: 8)</label><input id="steps" type="number" min="1" max="100" value="8"></div>
+        <div><label for="steps">Steps (turbo: 8)</label><input id="steps" type="number" min="1" max="100" value="8"></div>
         <div><label for="guidance">Guidance</label><input id="guidance" type="number" step="0.5" min="1" max="15" value="7"></div>
       </div>
       <div class="row">
-        <div><label for="seed">Seed (пусто = случайный)</label><input id="seed" type="number" placeholder="случайный"></div>
-        <div><label for="vlang">Язык вокала</label>
+        <div><label for="seed">Seed (empty = random)</label><input id="seed" type="number" placeholder="random"></div>
+        <div><label for="vlang">Vocal language</label>
           <select id="vlang"><option value="en">en</option><option value="ru">ru</option><option value="zh">zh</option><option value="ja">ja</option><option value="es">es</option><option value="de">de</option><option value="fr">fr</option></select></div>
       </div>
       <div class="row">
-        <div><label for="timesig">Размер</label><select id="timesig"><option value="">авто</option><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select></div>
+        <div><label for="timesig">Time signature</label><select id="timesig"><option value="">auto</option><option value="4">4/4</option><option value="3">3/4</option><option value="2">2/4</option><option value="6">6/8</option></select></div>
       </div>
     </details>
 
-    <button class="go" id="go">Сгенерировать ⌘↵</button>
-    <div class="hint" id="goHint">30 с трека ≈ 20–40 с генерации, первый запуск дольше (грузятся модели).</div>
+    <button class="go" id="go">Generate ⌘↵</button>
+    <div class="hint" id="goHint">30 s of track ≈ 20–40 s of generation; the first run is slower (models load).</div>
   </section>
 
   <section>
     <div class="jobs" id="jobs"></div>
     <div class="card">
       <div class="toolbar">
-        <h2 style="margin:0">Треки</h2>
-        <input id="q" placeholder="поиск по описанию">
-        <label class="toggle" style="margin:0"><input type="checkbox" id="onlyFav"> ★ только избранные</label>
+        <h2 style="margin:0">Tracks</h2>
+        <input id="q" placeholder="search descriptions">
+        <label class="toggle" style="margin:0"><input type="checkbox" id="onlyFav"> ★ favorites only</label>
       </div>
       <div class="tracks" id="tracks"></div>
     </div>
@@ -158,15 +158,15 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const PRESETS = {
-  "Минимал-электроника": ["Instrumental minimal electronic, pulsing analog synth arpeggio, soft sub bass, airy pads, cool focused mood, no vocals", 110],
-  "Трейлер": ["Epic cinematic trailer, huge taiko drums, braams, rising strings, dark tension build, massive hits, no vocals", 90],
+  "Minimal electronic": ["Instrumental minimal electronic, pulsing analog synth arpeggio, soft sub bass, airy pads, cool focused mood, no vocals", 110],
+  "Trailer": ["Epic cinematic trailer, huge taiko drums, braams, rising strings, dark tension build, massive hits, no vocals", 90],
   "Lo-fi": ["Lo-fi hip hop, dusty vinyl crackle, mellow Rhodes chords, laid-back boom bap drums, warm bass, chill study vibe, no vocals", 80],
-  "Синтвейв": ["Synthwave, retro 80s analog synths, gated reverb drums, driving bassline, neon night drive, nostalgic, no vocals", 105],
-  "Эмбиент": ["Ambient, evolving warm pads, soft granular textures, gentle piano notes, spacious reverb, calm and hopeful, no vocals", 70],
-  "Тех-хаус": ["Tech house, punchy four-on-the-floor kick, rolling bassline, crisp hi-hats, groovy percussion, minimal vocal chops", 124],
-  "Оркестр": ["Orchestral score, sweeping strings, french horns, delicate woodwinds, triumphant and emotional, cinematic, no vocals", 96],
-  "Корпоратив": ["Upbeat corporate tech, bright plucks, clean acoustic guitar, light claps, optimistic and modern, no vocals", 118],
-  "Поп с вокалом": ["Modern pop, catchy female vocals, bright synths, punchy drums, uplifting chorus", 115, "[Verse]\nCity lights are calling out my name\n[Chorus]\nWe run, we shine, we never stay the same"],
+  "Synthwave": ["Synthwave, retro 80s analog synths, gated reverb drums, driving bassline, neon night drive, nostalgic, no vocals", 105],
+  "Ambient": ["Ambient, evolving warm pads, soft granular textures, gentle piano notes, spacious reverb, calm and hopeful, no vocals", 70],
+  "Tech house": ["Tech house, punchy four-on-the-floor kick, rolling bassline, crisp hi-hats, groovy percussion, minimal vocal chops", 124],
+  "Orchestral": ["Orchestral score, sweeping strings, french horns, delicate woodwinds, triumphant and emotional, cinematic, no vocals", 96],
+  "Corporate": ["Upbeat corporate tech, bright plucks, clean acoustic guitar, light claps, optimistic and modern, no vocals", 118],
+  "Pop with vocals": ["Modern pop, catchy female vocals, bright synths, punchy drums, uplifting chorus", 115, "[Verse]\nCity lights are calling out my name\n[Chorus]\nWe run, we shine, we never stay the same"],
 };
 const TAGS = ["no vocals", "female vocals", "male vocals", "dark", "uplifting", "energetic", "calm", "cinematic",
   "808 bass", "analog synth", "piano", "acoustic guitar", "strings", "choir", "glitch", "vinyl crackle", "big drop", "slow build"];
@@ -193,8 +193,8 @@ function setup() {
     b.onclick = () => { const v = $("prompt").value.trim(); if (!v.toLowerCase().includes(t)) $("prompt").value = v ? `${v}, ${t}` : t; };
     $("tags").appendChild(b);
   }
-  for (const k of KEYS) { const o = document.createElement("option"); o.value = k; o.textContent = k || "авто"; $("key").appendChild(o); }
-  $("duration").oninput = () => $("durationOut").textContent = `${$("duration").value} с`;
+  for (const k of KEYS) { const o = document.createElement("option"); o.value = k; o.textContent = k || "auto"; $("key").appendChild(o); }
+  $("duration").oninput = () => $("durationOut").textContent = `${$("duration").value} s`;
   $("go").onclick = generate;
   $("write").onclick = writeSong;
   $("idea").addEventListener("keydown", e => { if (e.key === "Enter") writeSong(); });
@@ -211,16 +211,16 @@ function lyricLang(t) {
   if (/[\u3040-\u30ff]/.test(t)) return "ja";
   return null;
 }
-// текст есть, а описание просит инструментал, или язык вокала не тот: подсказываем, при старте чиним сами
+// lyrics present but description asks for instrumental, or wrong vocal language: warn, auto-fix on generate
 function checkConflicts() {
   const w = [];
   if (hasLyrics()) {
-    if (INSTR.test($("prompt").value)) w.push("в описании «instrumental / no vocals», а текст есть: уберу при генерации");
+    if (INSTR.test($("prompt").value)) w.push("description says \"instrumental / no vocals\" but there are lyrics: will remove on generate");
     INSTR.lastIndex = 0;
     const lang = lyricLang($("lyrics").value);
-    if (lang && lang !== $("vlang").value) w.push(`текст на «${lang}», а язык вокала «${$("vlang").value}»: переключу`);
+    if (lang && lang !== $("vlang").value) w.push(`lyrics are "${lang}" but vocal language is "${$("vlang").value}": will switch`);
     if ($("lyrics").value.trim().split(/\s+/).length < 8 && !/\[/.test($("lyrics").value))
-      w.push("это похоже на просьбу, а не на стихи: жми «Написать» в блоке идеи");
+      w.push("this looks like a request, not lyrics: press \"Write\" in the idea block");
   }
   $("warn").textContent = w.join(" · ");
 }
@@ -235,17 +235,17 @@ function fixConflicts() {
 
 async function writeSong() {
   const idea = $("idea").value.trim();
-  if (!idea) return toast("Напиши идею песни");
-  $("write").disabled = true; $("write").textContent = "Пишу…";
+  if (!idea) return toast("Enter a song idea");
+  $("write").disabled = true; $("write").textContent = "Writing…";
   try {
     const r = await j("/api/lyrics", { idea, lang: $("ideaLang").value, duration: +$("duration").value });
     $("lyrics").value = r.lyrics; $("prompt").value = r.caption;
     if (r.bpm) $("bpm").value = r.bpm;
     $("vlang").value = $("ideaLang").value;
-    if (+$("duration").value < 90) { $("duration").value = 120; $("durationOut").textContent = "120 с"; }
-    checkConflicts(); toast(r.title ? `«${r.title}» готово, жми «Сгенерировать»` : "Текст готов");
+    if (+$("duration").value < 90) { $("duration").value = 120; $("durationOut").textContent = "120 s"; }
+    checkConflicts(); toast(r.title ? `"${r.title}" is ready, press "Generate"` : "Lyrics ready");
   } catch (e) { toast(e.message); }
-  finally { $("write").disabled = false; $("write").textContent = "Написать"; }
+  finally { $("write").disabled = false; $("write").textContent = "Write"; }
 }
 
 function params() {
@@ -264,9 +264,9 @@ function params() {
 async function generate() {
   fixConflicts();
   const p = params();
-  if (!p.prompt) return toast("Опиши трек");
+  if (!p.prompt) return toast("Describe the track");
   $("go").disabled = true;
-  try { await j("/api/generate", p); toast("Пошло"); pollJobs(); }
+  try { await j("/api/generate", p); toast("Started"); pollJobs(); }
   catch (e) { toast(e.message); }
   finally { setTimeout(() => $("go").disabled = false, 600); }
 }
@@ -274,11 +274,11 @@ async function generate() {
 function load(t) {
   const p = t.params || {};
   $("prompt").value = p.prompt || ""; $("lyrics").value = p.lyrics || "[Instrumental]";
-  $("duration").value = p.audio_duration || 60; $("durationOut").textContent = `${$("duration").value} с`;
+  $("duration").value = p.audio_duration || 60; $("durationOut").textContent = `${$("duration").value} s`;
   $("bpm").value = p.bpm || t.metas?.bpm || ""; $("key").value = p.key_scale || "";
   $("steps").value = p.inference_steps || 8; $("guidance").value = p.guidance_scale || 7;
   $("thinking").checked = !!p.thinking;
-  window.scrollTo({ top: 0, behavior: "smooth" }); toast("Параметры загружены");
+  window.scrollTo({ top: 0, behavior: "smooth" }); toast("Parameters loaded");
 }
 
 let jobsTimer = null;
@@ -291,7 +291,7 @@ async function pollJobs() {
     if (x.status === "done" && x.elapsed > 20) continue;
     const el = document.createElement("div"); el.className = "job " + (x.status || "");
     const icon = x.status === "running" ? '<div class="spin"></div>' : x.status === "done" ? "✅" : "⚠️";
-    el.innerHTML = `${icon}<span class="p"></span><span class="meta">${x.status === "done" ? x.took + " с" : x.elapsed + " с"}</span>`;
+    el.innerHTML = `${icon}<span class="p"></span><span class="meta">${x.status === "done" ? x.took + " s" : x.elapsed + " s"}</span>`;
     el.querySelector(".p").textContent = x.status === "error" ? x.error : x.prompt;
     box.appendChild(el);
     if (x.status === "running") running++;
@@ -307,20 +307,20 @@ function renderTracks() {
   const q = $("q").value.toLowerCase(), fav = $("onlyFav").checked;
   const list = hist.filter(t => (!fav || t.fav) && (!q || (t.params?.prompt || "").toLowerCase().includes(q)));
   const box = $("tracks"); box.innerHTML = "";
-  if (!list.length) { box.innerHTML = '<div class="empty">Пока пусто. Выбери пресет слева и жми «Сгенерировать».</div>'; return; }
+  if (!list.length) { box.innerHTML = '<div class="empty">Nothing yet. Pick a preset on the left and press "Generate".</div>'; return; }
   for (const t of list) {
     const m = t.metas || {}, p = t.params || {};
     const el = document.createElement("div"); el.className = "track";
     el.innerHTML = `
       <div class="top"><div class="title"></div>
-        <div class="meta">${Math.round(m.duration || p.audio_duration || 0)} с · ${m.bpm || "?"} BPM · ${m.keyscale || "?"} · ${t.took} с</div></div>
+        <div class="meta">${Math.round(m.duration || p.audio_duration || 0)} s · ${m.bpm || "?"} BPM · ${m.keyscale || "?"} · ${t.took} s</div></div>
       <audio controls preload="none" src="/music/${encodeURIComponent(t.file)}"></audio>
       <div class="acts">
         <button class="btn ${t.fav ? "fav" : ""}" data-a="fav">${t.fav ? "★" : "☆"}</button>
-        <button class="btn" data-a="again">↻ ещё так же</button>
-        <button class="btn" data-a="load">✎ в форму</button>
+        <button class="btn" data-a="again">↻ again</button>
+        <button class="btn" data-a="load">✎ to form</button>
         <a class="btn" download href="/music/${encodeURIComponent(t.file)}">⬇ mp3</a>
-        <select data-a="proj"><option value="">в проект…</option>${projects.map(x => `<option>${x}</option>`).join("")}</select>
+        <select data-a="proj"><option value="">to project…</option>${projects.map(x => `<option>${x}</option>`).join("")}</select>
         <span class="meta" style="margin-left:auto">${t.at?.replace(/(\d{4})(\d\d)(\d\d)-(\d\d)(\d\d).*/, "$3.$2 $4:$5") || ""}</span>
       </div>`;
     el.querySelector(".title").textContent = p.prompt || t.file;
@@ -328,7 +328,7 @@ function renderTracks() {
     el.querySelector('[data-a="fav"]').onclick = async () => { await j("/api/fav", { file: t.file }); t.fav = !t.fav; renderTracks(); };
     el.querySelector('[data-a="load"]').onclick = () => load(t);
     el.querySelector('[data-a="again"]').onclick = async () => {
-      try { await j("/api/generate", { ...p, use_random_seed: true, seed: -1 }); toast("Пошло"); pollJobs(); } catch (e) { toast(e.message); }
+      try { await j("/api/generate", { ...p, use_random_seed: true, seed: -1 }); toast("Started"); pollJobs(); } catch (e) { toast(e.message); }
     };
     el.querySelector('[data-a="proj"]').onchange = async (e) => {
       if (!e.target.value) return;
@@ -343,12 +343,12 @@ async function health() {
   const el = $("health");
   try {
     const h = await j("/api/health");
-    el.className = "ok"; el.textContent = `● ${h.loaded_model || "ACE-Step"}${h.models_initialized ? "" : " (модели загрузятся на первом треке)"}`;
+    el.className = "ok"; el.textContent = `● ${h.loaded_model || "ACE-Step"}${h.models_initialized ? "" : " (models load on the first track)"}`;
   } catch (e) { el.className = "bad"; el.textContent = "● " + e.message; }
 }
 
-// играет только один трек: старт любого плеера ставит остальные на паузу
-// (событие play не всплывает, поэтому ловим на погружении)
+// only one track plays: starting any player pauses the others
+// (play doesn't bubble, so catch it in the capture phase)
 document.addEventListener("play", (e) => {
   for (const a of document.querySelectorAll("audio")) if (a !== e.target && !a.paused) a.pause();
 }, true);

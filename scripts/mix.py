@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Сведение: фразы диктора по таймингам narration.json + музыка с дакингом → один wav.
+"""Mixdown: narrator lines at narration.json timings + ducked music → one wav.
 
-Голос нормирован в voice_fx (−16 LUFS), музыка ставится около −27 LUFS и проседает
-под голосом сайдчейн-компрессором. loudnorm внутри пересэмплирует в 192 кГц и
-съедает хвост, поэтому после него всегда aresample и финальная добивка apad до длины.
+Voice is normalized in voice_fx (−16 LUFS), music sits around −27 LUFS and ducks
+under the voice via a sidechain compressor. loudnorm resamples to 192 kHz internally and
+eats the tail, so it's always followed by aresample and a final apad to length.
 
   python3 scripts/mix.py projects/x/narration.json projects/x/audio/fx music.mp3 projects/x/audio/mix.wav
-  python3 scripts/mix.py ... none projects/x/audio/mix.wav      # без музыки, только голос
+  python3 scripts/mix.py ... none projects/x/audio/mix.wav      # no music, voice only
 """
 
 import argparse
@@ -24,7 +24,7 @@ def main():
     ap.add_argument("music")
     ap.add_argument("out")
     ap.add_argument("--music-lufs", type=float, default=-27)
-    ap.add_argument("--music-offset", type=float, default=0, help="с какой секунды трека начинать")
+    ap.add_argument("--music-offset", type=float, default=0, help="track start offset, seconds")
     ap.add_argument("--duck-ratio", type=float, default=6)
     a = ap.parse_args()
 
@@ -32,8 +32,8 @@ def main():
     T = n["duration"]
     no_music = a.music == "none" or not os.path.exists(a.music)
     if no_music:
-        print(f"музыки нет ({a.music}), свожу только голос")
-    # без музыки на её место встаёт тишина: граф тот же, дакинг просто нечего давить
+        print(f"no music ({a.music}), mixing voice only")
+    # without music, silence takes its place: same graph, ducking just has nothing to duck
     args = ["-f", "lavfi", "-t", str(T), "-i", "anullsrc=r=48000:cl=stereo"] if no_music else ["-i", a.music]
     for i in range(len(n["lines"])):
         args += ["-i", os.path.join(a.voice_dir, clip_name(i))]
@@ -52,7 +52,7 @@ def main():
     f.append(f"[mu][sc]sidechaincompress=threshold=0.03:ratio={a.duck_ratio}:attack=30:release=500[duck]")
     f.append(f"[duck][voa]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.9,apad=whole_dur={T},atrim=0:{T}[out]")
     ffmpeg(*args, "-filter_complex", ";".join(f), "-map", "[out]", "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", a.out)
-    print(f"{a.out}: {duration(a.out):.2f}s (ожидалось {T}s)")
+    print(f"{a.out}: {duration(a.out):.2f}s (expected {T}s)")
 
 
 if __name__ == "__main__":

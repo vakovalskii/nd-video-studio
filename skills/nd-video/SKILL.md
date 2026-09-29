@@ -1,93 +1,96 @@
 ---
 name: nd-video
-description: Ролики-объяснялки на HyperFrames (HTML → MP4) с диктором, музыкой и сведением на инфраструктуре NeuralDeep. Триггеры: «сделай видео», «ролик», «объясни визуально», «озвучь», «наложи музыку», «перерендери», «поменяй голос / реверб».
+description: Explainer videos with HyperFrames (HTML → MP4) plus narrator, music and mixing on NeuralDeep infrastructure. Triggers: "make a video", "explainer", "explain visually", "add voiceover", "add music", "re-render", "change the voice / reverb".
 ---
 
-# nd-video: ролик от идеи до MP4
+# nd-video: from idea to MP4
 
-Пайп собран на ролике LLM vs Jev (112 с). Всё, что там сработало, здесь. Проекты (`projects/`)
-локальные и в git не лежат.
-Контракт композиции HyperFrames — в `vendor/hyperframes/skills/hyperframes-core/SKILL.md`,
-читать перед первой строкой HTML.
+The pipeline was built on the LLM vs Jev video (112 s, [`media/jev-vs-llm.mp4`](../../media/jev-vs-llm.mp4)).
+Everything that worked there is here. Projects (`projects/`) are local and not tracked in git.
+The HyperFrames composition contract is in `vendor/hyperframes/skills/hyperframes-core/SKILL.md`;
+read it before writing the first line of HTML.
 
-## Порядок работы
+## Workflow
 
-1. **Бриф и раскадровка.** Одна мысль на сцену. Каждой сцене: заголовок-вопрос, 2–4 фразы
-   рассказчика, «key idea» в конце. Без субтитров и карты маршрута зритель не понимает, что
-   на экране (главный фидбек по первой версии).
-2. **Композиция** `projects/<slug>/index.html`: `npx hyperframes init <slug> --example blank`.
-   Проверенные приёмы — ниже, «Приёмы».
-3. **Проверка**: `npx hyperframes check` и `npx hyperframes snapshot --at t1,t2,...`, потом
-   глазами смотреть contact-sheet. `check` ругается на наложения там, где камера по задумке
-   уходит под оверлеи (субтитры, лупа) — это ложные срабатывания, смотреть кадры.
-4. **Текст диктора** в `projects/<slug>/narration.json` (`start` + `text`, окно считается само).
-5. **Голос** → `audio/raw/line_NN.wav`:
-   - `scripts/tts_gpt_audio.py` — OpenAI gpt-audio через OpenRouter, лучший по подаче. Выбран `ash`.
-   - `scripts/tts_hub.py` — наш TTS хаба (Qwen3-TTS, 8 пресетов). Для трейлерной подачи слабоват.
-6. **Музыка** → `audio/music.mp3`:
-   - `scripts/music_lyria.py` — Lyria 3 Pro, $0.08 за трек.
-   - `scripts/music_acestep.py` — свой ACE-Step 1.5 (MIT), см. `docs/acestep.md`.
-7. **Звук**: `scripts/build_audio.sh projects/<slug> trailer` = подгонка фраз под окна
-   (`fit_narration.py`) → обработка голоса (`voice_fx.py`) → сведение с дакингом (`mix.py`).
-   В композиции один `<audio id="soundtrack" src="audio/mix.wav">` на всю длину.
-8. **Рендер**: `npx hyperframes render --output renders/<name>.mp4`, 112 с рендерятся ~1.5 мин.
+1. **Brief and storyboard.** One idea per scene. Each scene gets a question-style heading, 2–4
+   narrator lines and a "key idea" at the end. Without subtitles and a route map viewers don't
+   understand what they are looking at (the main feedback on the first cut).
+2. **Composition** `projects/<slug>/index.html`: `npx hyperframes init <slug> --example blank`.
+   Proven techniques are below, under "Techniques".
+3. **Check**: `npx hyperframes check` and `npx hyperframes snapshot --at t1,t2,...`, then look at
+   the contact sheet yourself. `check` flags overlaps where the camera intentionally goes under
+   overlays (subtitles, magnifier); those are false positives, trust the frames.
+4. **Narration text** in `projects/<slug>/narration.json` (`start` + `text`, windows are computed).
+5. **Voice** → `audio/raw/line_NN.wav`:
+   - `scripts/tts_gpt_audio.py`: OpenAI gpt-audio via OpenRouter, best delivery. Voice `ash`.
+   - `scripts/tts_hub.py`: the hub TTS (Qwen3-TTS, 8 presets). A bit weak for trailer delivery.
+6. **Music** → `audio/music.mp3`:
+   - `scripts/music_lyria.py`: Lyria 3 Pro, $0.08 per track.
+   - `scripts/music_acestep.py`: self-hosted ACE-Step 1.5 (MIT), see `docs/acestep.md`.
+7. **Sound**: `scripts/build_audio.sh projects/<slug> trailer` = fit lines into windows
+   (`fit_narration.py`) → voice processing (`voice_fx.py`) → mix with ducking (`mix.py`).
+   The composition has a single `<audio id="soundtrack" src="audio/mix.wav">` for the full length.
+8. **Render**: `npx hyperframes render --output renders/<name>.mp4`; 112 s renders in ~1.5 min.
+9. **Compress for sharing**: `ffmpeg -i in.mp4 -c:v libx264 -preset slow -crf 30 -tune animation
+   -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart out.mp4`. For the Jev video this took
+   51 MB down to 8.7 MB with no visible loss, small text included.
 
-Все команды наружу (`gh`, `curl`, `npx`) — без системного прокси:
-`env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY <команда>`.
+Outbound commands (`gh`, `curl`, `npx`) run without the system proxy:
+`env -u HTTPS_PROXY -u HTTP_PROXY -u https_proxy -u http_proxy -u ALL_PROXY <command>`.
 
-## Ключи и где запускать
+## Keys and where to run
 
-| что | ключ | откуда звать |
+| what | key | where from |
 |---|---|---|
-| gpt-audio, Lyria | `OPENROUTER_API_KEY` | только не с RU-IP: OpenRouter отдаёт 403. сервер вне РФ или `OPENROUTER_API_BASE` на свой egress |
-| TTS хаба | `ND_API_KEY` (свой `sk-`) | откуда угодно |
-| ACE-Step | `ACESTEP_API_KEY` (если задан) | ssh-туннель на бокс, API слушает 127.0.0.1 |
+| gpt-audio, Lyria | `OPENROUTER_API_KEY` | not from a Russian IP: OpenRouter returns 403. Use a server outside Russia or `OPENROUTER_API_BASE` pointing at your egress |
+| hub TTS | `ND_API_KEY` (your own `sk-`) | anywhere |
+| ACE-Step | `ACESTEP_API_KEY` (if set) | ssh tunnel to the box, the API listens on 127.0.0.1 |
 
-Секреты не печатать, в git не класть (`.env` в `.gitignore`).
+Never print secrets or commit them (`.env` is in `.gitignore`).
 
-## Голос: грабли
+## Voice: pitfalls
 
-- gpt-audio отвечает как ассистент («Understood, here is…») и читает теги вроде `<line>`.
-  Лечится system-промптом «ты TTS-движок» + голый текст в user + сверка расшифровки с текстом
-  и перезапрос (так делает `tts_gpt_audio.py`).
-- Аудио-выход у OpenRouter только `stream: true`; формат `pcm16` 24 кГц mono.
-- Фраза длиннее окна: `fit_narration.py` ускоряет до ×1.12, дальше слышно. `TOO LONG` = сократить
-  текст и переозвучить только её: `--only N`.
-- Пресеты обработки (`voice_fx.py`): `natural` (без обработки), `trailer` (финал ролика Jev:
-  бас +5 на 110 Гц, присутствие +2.5 на 3 кГц, компрессия 4:1, реверб 1.4 с / 18%), `deep` (тон
-  −2 полутона), `titan` (−4), `cathedral` (реверб 3.2 с / 45%), `radio` (полоса 350–3400 Гц).
-  Мелкие правки EQ после loudnorm на слух почти не слышны (первое A/B звучало «как клоны»),
-  поэтому пресеты разведены сильно. Докрутка флагами: `--pitch -1 --bass 7 --wet 0.25 --room 2`.
-  Сравнить на слух: `voice_fx.py fit ab --compare 0`.
+- gpt-audio answers like an assistant ("Understood, here is…") and reads tags such as `<line>`
+  aloud. Fix: a "you are a TTS engine" system prompt, bare text in the user turn, then transcribe
+  the result, compare it with the text and retry (`tts_gpt_audio.py` does this).
+- OpenRouter audio output works only with `stream: true`; the format is `pcm16`, 24 kHz mono.
+- A line longer than its window: `fit_narration.py` speeds it up to ×1.12, beyond that it is
+  audible. `TOO LONG` = shorten the text and re-voice only that line: `--only N`.
+- Processing presets (`voice_fx.py`): `natural` (no processing), `trailer` (final Jev mix: bass
+  +5 at 110 Hz, presence +2.5 at 3 kHz, 4:1 compression, 1.4 s / 18% reverb), `deep` (pitch
+  −2 semitones), `titan` (−4), `cathedral` (3.2 s / 45% reverb), `radio` (350–3400 Hz band).
+  Small EQ tweaks after loudnorm are barely audible (the first A/B sounded "like clones"), so the
+  presets are spread far apart. Fine-tune with flags: `--pitch -1 --bass 7 --wet 0.25 --room 2`.
+  Compare by ear: `voice_fx.py fit ab --compare 0`.
 
-## Музыка: грабли
+## Music: pitfalls
 
-- Lyria режет промпт со словами про AI/видео/продукт как `PROHIBITED_CONTENT` (денег не берёт).
-  Описывать только музыку: жанр, BPM, инструменты, настроение, «No vocals».
-- Трек Lyria ~170 с — `mix.py` режет до длины ролика, fade-in 1.5 с, fade-out 4 с;
-  `--music-offset` сдвигает начало.
-- Громкость: голос −16 LUFS, музыка −27 LUFS и сайдчейн-дакинг под голосом.
-- `loudnorm` пересэмплирует в 192 кГц и съедает хвост: после него `aresample` и `apad` до длины.
+- Lyria rejects prompts that mention AI/video/product as `PROHIBITED_CONTENT` (no charge).
+  Describe only the music: genre, BPM, instruments, mood, "No vocals".
+- A Lyria track is ~170 s; `mix.py` trims it to the video length, 1.5 s fade-in, 4 s fade-out;
+  `--music-offset` shifts the start.
+- Loudness: voice −16 LUFS, music −27 LUFS with sidechain ducking under the voice.
+- `loudnorm` resamples to 192 kHz and eats the tail: follow it with `aresample` and `apad` to length.
 
-## Приёмы HyperFrames, проверенные на ролике
+## HyperFrames techniques proven on the video
 
-- **Камера над «миром»**: один `#world` (например 3400×1800) с двумя «кристаллами»-архитектурами,
-  камера = `gsap.to("#world", {x, y, scale})` через `camState(x, y, s, sx, sy)` — точку мира ставим
-  в точку экрана. Общий план ~0.43, блок ~1.15, деталь ~2.7. Детали мельче читать через **лупу**:
-  круглый оверлей с отдельным SVG нормального размера.
-- **Счётчики** без `onUpdate` (при seek коллбэки глушатся): `@property --n { syntax: "<integer>";
-  inherits: true }` + `counter-reset: n var(--n)` в `::before`, твин `"--n"` со `snap`. `inherits`
-  обязательно `true`, иначе псевдоэлемент видит 0.
-- Повторные твины одного элемента — `fromTo(..., {immediateRender: false})`, иначе поздний
-  `fromTo` сбрасывает раннее состояние на нулевом кадре.
-- Не твинить `letterSpacing` и прочие layout-свойства (lint `gsap_non_transform_motion`),
-  не твинить `visibility`/`autoAlpha` у `.clip`.
-- Случайность только сидированная (`mulberry32`), без `Date.now`/`Math.random`.
-- Сверху шапки — тёмный градиент и подложка под заголовок, иначе при зуме текст ложится на блоки.
-- Копирайт: метка в углу + лёгкий водяной знак по центру (7% белого), в финале убрать.
+- **Camera over a "world"**: a single `#world` (e.g. 3400×1800) holding two architecture
+  "crystals"; the camera is `gsap.to("#world", {x, y, scale})` via `camState(x, y, s, sx, sy)`,
+  which puts a world point at a screen point. Wide shot ~0.43, block ~1.15, detail ~2.7. Read
+  finer details through a **magnifier**: a round overlay with a separate full-size SVG.
+- **Counters** without `onUpdate` (callbacks are muted on seek): `@property --n { syntax: "<integer>";
+  inherits: true }` + `counter-reset: n var(--n)` in `::before`, tween `"--n"` with `snap`.
+  `inherits` must be `true`, otherwise the pseudo-element sees 0.
+- Repeated tweens on the same element: `fromTo(..., {immediateRender: false})`, otherwise a late
+  `fromTo` resets the earlier state on frame zero.
+- Don't tween `letterSpacing` or other layout properties (lint `gsap_non_transform_motion`),
+  don't tween `visibility`/`autoAlpha` on `.clip`.
+- Seeded randomness only (`mulberry32`), no `Date.now`/`Math.random`.
+- Put a dark gradient and a backing plate behind the header, otherwise zoomed text lands on blocks.
+- Copyright: a corner badge + a faint centered watermark (7% white), removed in the finale.
 
-## Честность фактуры
+## Factual honesty
 
-Для разборов чужих моделей: в кадре помечать, что подтверждено источником, а что оценка
-(«likely», «est.», «illustrative»). В ролике Jev так помечены MoE, ~10B активных параметров и
-специализация экспертов.
+When breaking down someone else's model, mark on screen what a source confirms and what is an
+estimate ("likely", "est.", "illustrative"). In the Jev video MoE, ~10B active parameters and
+expert specialization are marked this way.

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Обработка голоса диктора: EQ, компрессия, реверб свёрткой.
+"""Narrator voice processing: EQ, compression, convolution reverb.
 
-Реверб — afir с синтетическим импульсом (розовый шум с экспоненциальным спадом),
-детерминированный по seed, поэтому рендер повторяем. Пресеты подбирались на ролике
-Jev vs LLM (голос gpt-audio ash); «trailer» — то, что ушло в финал.
+Reverb is afir with a synthetic impulse (pink noise with exponential decay),
+deterministic by seed, so renders are reproducible. Presets were tuned on the video
+Jev vs LLM (gpt-audio ash voice); "trailer" is what made the final cut.
 
   python3 scripts/voice_fx.py projects/x/audio/fit projects/x/audio/fx --preset trailer
-  python3 scripts/voice_fx.py projects/x/audio/fit /tmp/ab --compare 0       # A/B всех пресетов
-  python3 scripts/voice_fx.py ... --preset trailer --bass 7 --wet 0.25     # ручная докрутка
+  python3 scripts/voice_fx.py projects/x/audio/fit /tmp/ab --compare 0       # A/B of all presets
+  python3 scripts/voice_fx.py ... --preset trailer --bass 7 --wet 0.25     # manual tweaking
 """
 
 import argparse
@@ -19,10 +19,10 @@ sys.path.insert(0, os.path.dirname(__file__))
 from ndv_common import ffmpeg  # noqa: E402
 
 PRESETS = {
-    # bass: дБ полкой на 110 Гц; presence: дБ на 3 кГц; comp: ratio (0 = без компрессора);
-    # room: секунды хвоста реверба; wet: доля реверба; pitch: полутона (минус = ниже);
-    # band: "lo-hi" Гц полосовой фильтр (радио). loudnorm в конце выравнивает громкость,
-    # поэтому мелкие отличия EQ на слух почти пропадают: пресеты сделаны заметно разными.
+    # bass: dB shelf at 110 Hz; presence: dB at 3 kHz; comp: ratio (0 = no compressor);
+    # room: reverb tail seconds; wet: reverb share; pitch: semitones (negative = lower);
+    # band: "lo-hi" Hz bandpass (radio). loudnorm at the end evens out loudness,
+    # so small EQ differences are barely audible: presets are made clearly different.
     "natural":   dict(bass=0, presence=0,   comp=0, room=0.0, wet=0.0,  pitch=0,  band=""),
     "trailer":   dict(bass=5, presence=2.5, comp=4, room=1.4, wet=0.18, pitch=0,  band=""),
     "deep":      dict(bass=6, presence=2,   comp=4, room=1.4, wet=0.15, pitch=-2, band=""),
@@ -40,7 +40,7 @@ def make_ir(path, room, seed=7):
 def process(src, dst, p, ir):
     chain = ["aresample=48000", "highpass=f=60"]
     if p["pitch"]:
-        r = 2 ** (p["pitch"] / 12)            # тон ниже, длительность та же
+        r = 2 ** (p["pitch"] / 12)            # lower pitch, same duration
         chain += [f"asetrate={48000 * r:.0f}", "aresample=48000", f"atempo={1 / r:.5f}"]
     if p["band"]:
         lo, hi = p["band"].split("-")
@@ -75,7 +75,7 @@ def main():
     ap.add_argument("in_dir")
     ap.add_argument("out_dir")
     ap.add_argument("--preset", default="trailer", choices=PRESETS)
-    ap.add_argument("--compare", type=int, nargs="*", help="номера фраз для A/B-файла всех пресетов")
+    ap.add_argument("--compare", type=int, nargs="*", help="line numbers for an A/B file of all presets")
     for k in ("bass", "presence", "comp", "room", "wet", "pitch"):
         ap.add_argument(f"--{k}", type=float)
     a = ap.parse_args()
@@ -92,12 +92,12 @@ def main():
                 out = os.path.join(a.out_dir, f"ab_{name}_{i:02d}.wav")
                 process(os.path.join(a.in_dir, f"line_{i:02d}.wav"), out, p, ir)
                 parts.append(out)
-        # склейка с паузами в порядке пресетов
+        # concatenate with pauses in preset order
         inputs = sum((["-i", x] for x in parts), [])
         fc = "".join(f"[{k}:a]apad=pad_dur=1.0[a{k}];" for k in range(len(parts)))
         fc += "".join(f"[a{k}]" for k in range(len(parts))) + f"concat=n={len(parts)}:v=0:a=1[o]"
         ffmpeg(*inputs, "-filter_complex", fc, "-map", "[o]", os.path.join(a.out_dir, "AB-" + "-".join(PRESETS) + ".wav"))
-        print("A/B:", os.path.join(a.out_dir, "AB-" + "-".join(PRESETS) + ".wav"), "порядок:", ", ".join(PRESETS))
+        print("A/B:", os.path.join(a.out_dir, "AB-" + "-".join(PRESETS) + ".wav"), "order:", ", ".join(PRESETS))
         return
 
     p = params(a, a.preset)
