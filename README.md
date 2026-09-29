@@ -11,9 +11,7 @@ picked up by Claude Code (`.claude/skills`) and Codex/Cursor (`.agents/skills`).
 
 ## Example: LLM vs Jev
 
-[![LLM vs Jev: two architectures side by side, camera and magnifier, 112 s](media/jev-vs-llm.jpg)](media/jev-vs-llm.mp4)
-
-[`media/jev-vs-llm.mp4`](media/jev-vs-llm.mp4): 1080p, 112 s, 8.7 MB. The first video made with this
+The video at the top ([`media/jev-vs-llm.mp4`](media/jev-vs-llm.mp4), 1080p, 112 s, 8.7 MB) is the first one made with this
 pipeline: a camera flying over two architecture "crystals", a magnifier for details, word-level
 subtitles, narrator with the `trailer` preset and ducked music.
 
