@@ -59,3 +59,7 @@ Requires Node 22+, FFmpeg, Python 3.10+ (standard library only).
 
 `OPENROUTER_API_KEY` (gpt-audio, Lyria; OpenRouter returns 403 from Russian IPs), `ND_API_KEY` (hub),
 `ACESTEP_API_KEY` (if the ACE-Step server is key-protected). Keep them in `.env`, it's in `.gitignore`.
+
+## License
+
+[MIT](LICENSE). `vendor/hyperframes/` stays under its own Apache License 2.0 ([LICENSE](vendor/hyperframes/LICENSE)).
