@@ -24,6 +24,8 @@ read it before writing the first line of HTML.
 5. **Voice** → `audio/raw/line_NN.wav`:
    - `scripts/tts_gpt_audio.py`: OpenAI gpt-audio via OpenRouter, best delivery. Voice `ash`.
    - `scripts/tts_hub.py`: the hub TTS (Qwen3-TTS, 8 presets). A bit weak for trailer delivery.
+   - `scripts/tts_elevenlabs.py`: ElevenLabs `eleven_multilingual_v2`. The best Russian of the three;
+     `voices` lists the account's voices, `speak` voices narration.json (neighbouring lines go as context).
 6. **Music** → `audio/music.mp3`:
    - `scripts/music_lyria.py`: Lyria 3 Pro, $0.08 per track.
    - `scripts/music_acestep.py`: self-hosted ACE-Step 1.5 (MIT), see `docs/acestep.md`.
@@ -62,6 +64,13 @@ Never print secrets or commit them (`.env` is in `.gitignore`).
   Small EQ tweaks after loudnorm are barely audible (the first A/B sounded "like clones"), so the
   presets are spread far apart. Fine-tune with flags: `--pitch -1 --bass 7 --wet 0.25 --room 2`.
   Compare by ear: `voice_fx.py fit ab --compare 0`.
+
+- ElevenLabs free tier: pcm output and library voices (native Russian speakers) are paid only
+  (403 / 402), so the script takes mp3 and the premade voices work (Brian `nPczCjzI2devNBz1zQrb`
+  was picked for Russian). 10 000 characters a month; a 90 s video is ~1 300. Reachable from RU IPs.
+- Hub TTS for Russian: `language` Russian goes to ESpeech, which answers 500 on words it doesn't
+  know (terms, transliterated names); `Auto` goes to Qwen3-TTS, whose presets are not native
+  Russian speakers and drift in timbre and emotion between lines.
 
 ## Music: pitfalls
 
